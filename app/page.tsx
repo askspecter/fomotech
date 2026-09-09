@@ -3,6 +3,7 @@ import StatCard from "@/components/StatCard";
 import PnlBarChart from "@/components/PnlBarChart";
 import WindowTabs from "@/components/WindowTabs";
 import TokenLogo from "@/components/TokenLogo";
+import TokenPrice from "@/components/TokenPrice";
 import { getLeaderboard, deriveMarketStats, getTrending, isLive } from "@/lib/fomo-api";
 import { fmtUsd, fmtNum, fmtPct } from "@/lib/format";
 import type { LeaderboardWindow } from "@/lib/types";
@@ -28,16 +29,15 @@ export default async function DashboardPage({
     <>
       <Topbar title="Dashboard" subtitle="Market overview across the fomo ecosystem" />
       <div className="space-y-7 p-5">
-        {/* Cinematic hero band */}
+        {/* Cinematic hero band — PEA cover art */}
         <section className="rise card relative overflow-hidden p-6 sm:p-8">
-          <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-brand/20 blur-3xl" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-brand-soft opacity-60" />
-          <img
-            src="/pea-logo.jpg"
-            alt=""
-            aria-hidden
-            className="pointer-events-none absolute -right-8 top-1/2 hidden h-64 w-64 -translate-y-1/2 rounded-3xl opacity-[0.14] mix-blend-screen lg:block"
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: "url(/pea-cover.png)" }}
           />
+          {/* Legibility scrim: solid at the text (left), fading to reveal the art (right). */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-surface via-surface/85 to-surface/20" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface/70 to-transparent" />
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-xl">
               <div className="eyebrow flex items-center gap-2">
@@ -92,8 +92,8 @@ export default async function DashboardPage({
               <h2 className="mt-1 font-display text-lg font-bold tracking-tight">Trending tokens on fomo</h2>
             </div>
             {isLive ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-up/12 px-2.5 py-1 text-[11px] font-medium text-up">
-                <span className="h-1.5 w-1.5 rounded-full bg-up shadow-[0_0_6px] shadow-up" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-[11px] font-medium text-brand-bright">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
                 Live prices
               </span>
             ) : (
@@ -136,7 +136,9 @@ export default async function DashboardPage({
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 text-right font-medium tabular-nums">{fmtUsd(t.priceUsd)}</td>
+                      <td className="py-3 text-right font-medium tabular-nums">
+                        <TokenPrice address={t.address} fallbackUsd={t.priceUsd} />
+                      </td>
                       <td className="py-3 text-right">
                         <span
                           className={`inline-block rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ${

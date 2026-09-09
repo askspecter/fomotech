@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 
-/** Deterministic hue from a string, so each handle keeps a stable identicon. */
+/**
+ * Deterministic hue from a string, constrained to a cool blue→violet band
+ * (205–285°) so identicons stay on-palette with the app's steel-blue theme.
+ */
 function hue(seed: string): number {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 360;
-  return h;
+  return 205 + (h % 80);
 }
 
 /**
@@ -51,7 +54,7 @@ export default function Avatar({
         width: size,
         height: size,
         fontSize: size * 0.4,
-        backgroundImage: `linear-gradient(135deg, hsl(${h} 62% 42%), hsl(${(h + 40) % 360} 60% 26%))`,
+        backgroundImage: `linear-gradient(135deg, hsl(${h} 55% 46%), hsl(${h - 20} 50% 26%))`,
       }}
     >
       {letter}

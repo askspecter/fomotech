@@ -11,12 +11,12 @@
 
 html,
 body {
-  background: #080810;
-  color: #eceef5;
+  background: #080b16;
+  color: #eef1f8;
 }
 
-/* Cinematic ambient light — a single red source (top-right) grounded by a
-   dark navy vignette, echoing the PEA logo's glow on near-black. */
+/* Cinematic ambient light — cool blue sources on deep navy, echoing the PEA
+   cover art (steel-blue rim light on a dark field). */
 body::before {
   content: "";
   position: fixed;
@@ -24,9 +24,9 @@ body::before {
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(1000px 560px at 82% -12%, rgba(245, 35, 46, 0.16), transparent 60%),
-    radial-gradient(680px 420px at 6% 2%, rgba(245, 35, 46, 0.05), transparent 55%),
-    radial-gradient(900px 700px at 50% 120%, rgba(20, 22, 44, 0.55), transparent 60%);
+    radial-gradient(1000px 560px at 82% -12%, rgba(91, 124, 255, 0.18), transparent 60%),
+    radial-gradient(720px 460px at 4% 6%, rgba(120, 150, 255, 0.08), transparent 55%),
+    radial-gradient(900px 700px at 50% 120%, rgba(16, 22, 52, 0.6), transparent 60%);
 }
 
 /* Fine grid + edge vignette for depth. */
@@ -57,7 +57,7 @@ h3 {
 }
 
 ::selection {
-  background: rgba(245, 35, 46, 0.28);
+  background: rgba(91, 124, 255, 0.3);
   color: #fff;
 }
 
@@ -107,7 +107,7 @@ h3 {
 
 @keyframes flash {
   from {
-    background-color: rgba(245, 35, 46, 0.16);
+    background-color: rgba(91, 124, 255, 0.16);
   }
   to {
     background-color: transparent;

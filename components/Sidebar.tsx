@@ -43,6 +43,14 @@ function Icon({ k }: { k: IconKey }) {
   );
 }
 
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+    </svg>
+  );
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   return (
@@ -78,12 +86,31 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="mt-auto rounded-xl2 border border-border bg-brand-soft p-4 text-xs text-muted">
-        <div className="mb-1 flex items-center gap-1.5 font-display font-semibold text-white">
-          <span className="h-2 w-2 rounded-full bg-brand shadow-[0_0_8px] shadow-brand" />
-          Robinhood Chain
+      <div className="mt-auto space-y-3">
+        <a
+          href="https://x.com/peadotfamily"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 px-3 py-2.5 text-sm font-medium text-muted transition hover:border-brand/40 hover:text-white"
+        >
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-surface-3 text-white">
+            <XIcon />
+          </span>
+          <span className="leading-tight">
+            <span className="block font-semibold text-white">Follow PEA</span>
+            <span className="block text-[11px] text-muted-2">@peadotfamily</span>
+          </span>
+          <svg className="ml-auto h-3.5 w-3.5 text-muted-2 transition group-hover:text-brand-bright" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M7 17 17 7M8 7h9v9" />
+          </svg>
+        </a>
+        <div className="rounded-xl2 border border-border bg-brand-soft p-4 text-xs text-muted">
+          <div className="mb-1 flex items-center gap-1.5 font-display font-semibold text-white">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            Robinhood Chain
+          </div>
+          Every token and signal on this app is Robinhood Chain only.
         </div>
-        Every token and signal on this app is Robinhood Chain only.
       </div>
     </aside>
   );
