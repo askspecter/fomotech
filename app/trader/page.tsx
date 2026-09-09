@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Topbar from "@/components/Topbar";
 import Verified from "@/components/Verified";
+import Avatar from "@/components/Avatar";
 import { useLocalList } from "@/lib/useLocalList";
 import type { TraderProfile, UserTrade, Portfolio, SocialTrader } from "@/lib/types";
 import { fmtUsd, fmtNum, fmtPct } from "@/lib/format";
@@ -92,14 +93,7 @@ export default function TraderPage() {
             {/* Profile header */}
             <div className="flex flex-wrap items-start justify-between gap-4 card p-5">
               <div className="flex items-center gap-4">
-                {p.profilePictureLink ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.profilePictureLink} alt="" className="h-14 w-14 rounded-full object-cover" />
-                ) : (
-                  <div className="grid h-14 w-14 place-items-center rounded-full bg-brand/20 text-lg font-bold text-brand-bright">
-                    {p.handle.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
+                <Avatar image={p.profilePictureLink} handle={p.handle} size={56} />
                 <div>
                   <div className="flex items-center gap-1.5 text-lg font-bold">
                     @{p.handle}
@@ -227,9 +221,12 @@ export default function TraderPage() {
                         {following.map((f) => (
                           <tr key={f.handle} className="border-t border-border/60">
                             <td className="py-2">
-                              <span className="inline-flex items-center gap-1 font-medium">
-                                @{f.handle}
-                                {f.verified && <Verified className="text-brand-bright" />}
+                              <span className="inline-flex items-center gap-2.5 font-medium">
+                                <Avatar handle={f.handle} size={28} />
+                                <span className="inline-flex items-center gap-1">
+                                  @{f.handle}
+                                  {f.verified && <Verified className="text-brand-bright" />}
+                                </span>
                               </span>
                             </td>
                             <td className={`py-2 text-right tabular-nums ${f.pnl24h >= 0 ? "text-up" : "text-down"}`}>

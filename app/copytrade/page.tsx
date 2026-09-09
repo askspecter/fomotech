@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Topbar from "@/components/Topbar";
 import Verified from "@/components/Verified";
+import Avatar from "@/components/Avatar";
 import { useLocalList } from "@/lib/useLocalList";
 import type { Trader } from "@/lib/types";
 import { fmtUsd, fmtNum } from "@/lib/format";
@@ -99,9 +100,12 @@ export default function CopytradePage() {
                       <tr key={t.handle} className="border-t border-border/60">
                         <td className="px-5 py-4 text-muted">{t.rank}</td>
                         <td className="px-5 py-4">
-                          <Link href="/trader" className="inline-flex items-center gap-1 font-medium hover:text-brand-bright">
-                            @{t.handle}
-                            {t.verified && <Verified className="text-brand-bright" />}
+                          <Link href="/trader" className="inline-flex items-center gap-2.5 font-medium hover:text-brand-bright">
+                            <Avatar image={t.image} handle={t.handle} size={32} />
+                            <span className="inline-flex items-center gap-1">
+                              @{t.handle}
+                              {t.verified && <Verified className="text-brand-bright" />}
+                            </span>
                           </Link>
                         </td>
                         <td className={`px-5 py-4 text-right font-semibold tabular-nums ${t.pnlUsd >= 0 ? "text-up" : "text-down"}`}>

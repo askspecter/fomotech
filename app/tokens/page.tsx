@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Topbar from "@/components/Topbar";
+import Avatar from "@/components/Avatar";
 import type { TokenIntel, TokenWindow } from "@/lib/types";
 import { fmtUsd, fmtNum } from "@/lib/format";
 
@@ -137,9 +138,12 @@ export default function TokensPage() {
                 ) : (
                   <ul className="space-y-2">
                     {intel.holders.map((h, i) => (
-                      <li key={i} className="flex items-center justify-between text-sm">
-                        <span className="font-medium">@{h.handle}</span>
-                        <span className="tabular-nums text-muted">{fmtUsd(h.valueUsd, { compact: true })}</span>
+                      <li key={i} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="flex min-w-0 items-center gap-2.5 font-medium">
+                          <Avatar handle={h.handle} size={28} />
+                          <span className="truncate">@{h.handle}</span>
+                        </span>
+                        <span className="shrink-0 tabular-nums text-muted">{fmtUsd(h.valueUsd, { compact: true })}</span>
                       </li>
                     ))}
                   </ul>

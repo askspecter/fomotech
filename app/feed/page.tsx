@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Topbar from "@/components/Topbar";
+import Avatar from "@/components/Avatar";
 import type { Alert } from "@/lib/types";
 import { fmtUsd, timeAgo } from "@/lib/format";
 
@@ -92,8 +93,15 @@ export default function FeedPage() {
               key={a.id}
               className="flash flex items-center gap-4 rounded-xl border border-border bg-surface px-4 py-3"
             >
+              {a.trader ? (
+                <Avatar handle={a.trader} size={36} />
+              ) : (
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border-soft bg-surface-2 text-muted-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" /></svg>
+                </span>
+              )}
               <span
-                className={`w-16 shrink-0 rounded-md px-2 py-0.5 text-center text-xs font-bold uppercase ${
+                className={`hidden w-16 shrink-0 rounded-md px-2 py-0.5 text-center text-xs font-bold uppercase sm:block ${
                   TYPE_STYLE[a.alertType] ?? "bg-surface-2 text-muted"
                 }`}
               >
