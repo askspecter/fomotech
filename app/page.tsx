@@ -6,7 +6,9 @@ import WindowTabs from "@/components/WindowTabs";
 import TokenLogo from "@/components/TokenLogo";
 import TokenPrice from "@/components/TokenPrice";
 import PeaToken from "@/components/PeaToken";
-import { getLeaderboard, deriveMarketStats, getTrending, isLive } from "@/lib/fomo-api";
+import { getLeaderboard, deriveMarketStats, getTrending, getTokenMarket, isLive } from "@/lib/fomo-api";
+
+const PEA_CA = process.env.NEXT_PUBLIC_PEA_TOKEN || "0xd046a0B73dBE5b4E00F507526C35E5426C873f99";
 import { fmtUsd, fmtNum, fmtPct } from "@/lib/format";
 import type { LeaderboardWindow } from "@/lib/types";
 
@@ -23,7 +25,11 @@ export default async function DashboardPage({
     ? searchParams.window
     : "24h") as LeaderboardWindow;
 
-  const [traders, trending] = await Promise.all([getLeaderboard(window, 50), getTrending(10)]);
+  const [traders, trending, peaMarket] = await Promise.all([
+    getLeaderboard(window, 50),
+    getTrending(10),
+    getTokenMarket(PEA_CA),
+  ]);
   const stats = deriveMarketStats(traders, window);
   const topPnl = traders.slice(0, 10).map((t) => ({ handle: t.handle, pnlUsd: t.pnlUsd }));
 
@@ -71,8 +77,8 @@ export default async function DashboardPage({
           </div>
         </section>
 
-        {/* Official $PEA token, real-time from the explorer */}
-        <PeaToken />
+        {/* Official $PEA token, real-time from the explorer + fomo board price */}
+        <PeaToken fallbackPrice={peaMarket.priceUsd} fallbackMarketCap={peaMarket.marketCapUsd} />
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[

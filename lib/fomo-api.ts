@@ -174,6 +174,57 @@ export async function getTrending(limit = 10): Promise<BoardToken[]> {
   }
 }
 
+export interface TokenMarket {
+  priceUsd?: number;
+  marketCapUsd?: number;
+  volume24hUsd?: number;
+}
+
+/**
+ * Best-effort market data for a single token by address, sourced from the fomo
+ * boards (the only public endpoints that expose a USD price). Scans trending,
+ * most-held and graduated, then token search. Returns whatever it finds, or an
+ * empty object. Safe to call in mock mode (returns {}).
+ */
+export async function getTokenMarket(address: string): Promise<TokenMarket> {
+  if (!isLive || !address) return {};
+  const want = address.toLowerCase();
+  const boards = [
+    "/v2/leaderboard/tokens/trending?limit=50",
+    "/v2/leaderboard/tokens/most-held?limit=50",
+    "/v2/leaderboard/tokens/graduated?limit=50",
+  ];
+  for (const path of boards) {
+    try {
+      const data = await fomoFetch<any>(path, 30);
+      const tokens: any[] = data?.tokens ?? (Array.isArray(data) ? data : []);
+      const hit = tokens.find(
+        (t) => (t.token?.address ?? t.address ?? "").toLowerCase() === want,
+      );
+      if (hit) {
+        const price = Number(hit.priceUsd ?? hit.token?.priceUsd ?? 0);
+        const mcap = Number(hit.marketCapUsd ?? hit.token?.marketCapUsd ?? 0);
+        const vol = Number(hit.volume24hUsd ?? 0);
+        return {
+          priceUsd: price > 0 ? price : undefined,
+          marketCapUsd: mcap > 0 ? mcap : undefined,
+          volume24hUsd: vol > 0 ? vol : undefined,
+        };
+      }
+    } catch {
+      /* try the next board */
+    }
+  }
+  // Last resort: token search exposes market cap (no live price).
+  try {
+    const res = await searchTokens(address, 1);
+    if (res[0]?.marketCapUsd) return { marketCapUsd: res[0].marketCapUsd };
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
 // --- Alerts (live feed) ---------------------------------------------------
 
 export async function getAlerts(limit = 40): Promise<Alert[]> {

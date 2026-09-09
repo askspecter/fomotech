@@ -14,7 +14,7 @@ interface PeaData {
   price?: number;
   marketCap?: number;
   holders?: number;
-  volume24h?: number;
+  supply?: number;
 }
 
 function short(addr: string) {
@@ -27,7 +27,13 @@ function short(addr: string) {
  * so the price stays live. The explorer request runs client-side to pass the
  * bot gate that blocks server-side calls.
  */
-export default function PeaToken() {
+export default function PeaToken({
+  fallbackPrice,
+  fallbackMarketCap,
+}: {
+  fallbackPrice?: number;
+  fallbackMarketCap?: number;
+}) {
   const [d, setD] = useState<PeaData | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -43,17 +49,17 @@ export default function PeaToken() {
         const price = Number(j?.exchange_rate);
         const decimals = Number(j?.decimals ?? 18);
         const supply = Number(j?.total_supply ?? 0) / 10 ** decimals;
-        const mcap = Number(j?.circulating_market_cap) || (Number.isFinite(price) ? price * supply : 0);
+        const circ = Number(j?.circulating_market_cap);
         if (!cancelled) {
           setD({
             price: Number.isFinite(price) && price > 0 ? price : undefined,
-            marketCap: mcap > 0 ? mcap : undefined,
+            marketCap: circ > 0 ? circ : undefined,
             holders: Number(j?.holders) || Number(j?.holders_count) || undefined,
-            volume24h: Number(j?.volume_24h) || undefined,
+            supply: supply > 0 ? supply : undefined,
           });
         }
       } catch {
-        /* explorer gated / offline: card shows the CA and link, price stays "—" */
+        /* explorer gated / offline: card still shows holders/supply when available */
       }
     };
     load();
@@ -63,6 +69,14 @@ export default function PeaToken() {
       clearInterval(id);
     };
   }, []);
+
+  // Price: explorer exchange_rate first, then the fomo board fallback.
+  const price = d?.price ?? fallbackPrice;
+  // Market cap: explorer circulating cap, else price x supply, else fomo board.
+  const marketCap =
+    d?.marketCap ??
+    (price != null && d?.supply != null ? price * d.supply : undefined) ??
+    fallbackMarketCap;
 
   const copy = async () => {
     try {
@@ -104,7 +118,7 @@ export default function PeaToken() {
               <span className="eyebrow !tracking-[0.14em]">Live price</span>
             </div>
             <div className="mt-1 font-display text-3xl font-black tabular-nums text-white">
-              {d?.price != null ? fmtUsd(d.price) : "—"}
+              {price != null ? fmtUsd(price) : "—"}
             </div>
           </div>
         </div>
@@ -112,9 +126,9 @@ export default function PeaToken() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            ["Market cap", d?.marketCap != null ? fmtUsd(d.marketCap, { compact: true }) : "—"],
+            ["Market cap", marketCap != null ? fmtUsd(marketCap, { compact: true }) : "—"],
             ["Holders", d?.holders != null ? fmtNum(d.holders) : "—"],
-            ["Volume 24h", d?.volume24h != null ? fmtUsd(d.volume24h, { compact: true }) : "—"],
+            ["Supply", d?.supply != null ? fmtNum(d.supply) : "—"],
           ].map(([label, val]) => (
             <div key={label} className="rounded-xl border border-border-soft bg-surface-2/40 p-3">
               <div className="eyebrow !tracking-[0.1em]">{label}</div>
