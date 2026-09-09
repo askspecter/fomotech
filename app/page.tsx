@@ -6,6 +6,7 @@ import WindowTabs from "@/components/WindowTabs";
 import TokenLogo from "@/components/TokenLogo";
 import TokenPrice from "@/components/TokenPrice";
 import PeaToken from "@/components/PeaToken";
+import BurnTracker from "@/components/BurnTracker";
 import { getLeaderboard, deriveMarketStats, getTrending, getTokenMarket, isLive } from "@/lib/fomo-api";
 
 const PEA_CA = process.env.NEXT_PUBLIC_PEA_TOKEN || "0xd046a0B73dBE5b4E00F507526C35E5426C873f99";
@@ -79,6 +80,9 @@ export default async function DashboardPage({
 
         {/* Official $PEA token, real-time from the explorer + fomo board price */}
         <PeaToken fallbackPrice={peaMarket.priceUsd} fallbackMarketCap={peaMarket.marketCapUsd} />
+
+        {/* Live buyback & burn tracker */}
+        <BurnTracker />
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[
