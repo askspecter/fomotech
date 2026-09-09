@@ -5,6 +5,7 @@ import PnlBarChart from "@/components/PnlBarChart";
 import WindowTabs from "@/components/WindowTabs";
 import TokenLogo from "@/components/TokenLogo";
 import TokenPrice from "@/components/TokenPrice";
+import PeaToken from "@/components/PeaToken";
 import { getLeaderboard, deriveMarketStats, getTrending, isLive } from "@/lib/fomo-api";
 import { fmtUsd, fmtNum, fmtPct } from "@/lib/format";
 import type { LeaderboardWindow } from "@/lib/types";
@@ -69,6 +70,9 @@ export default async function DashboardPage({
             </div>
           </div>
         </section>
+
+        {/* Official $PEA token, real-time from the explorer */}
+        <PeaToken />
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[
