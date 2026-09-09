@@ -6,7 +6,8 @@ import Avatar from "@/components/Avatar";
 import type { Alert } from "@/lib/types";
 import { fmtUsd, timeAgo } from "@/lib/format";
 
-const POLL_MS = Number(process.env.NEXT_PUBLIC_FEED_POLL_MS ?? 15000);
+// Guard against an empty/0 env value (which would poll in a tight loop).
+const POLL_MS = Math.max(5000, Number(process.env.NEXT_PUBLIC_FEED_POLL_MS) || 15000);
 
 type Filter = "all" | "buy" | "sell" | "thesis" | "whale";
 

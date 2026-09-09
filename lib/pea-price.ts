@@ -1,6 +1,7 @@
 import { createPublicClient, http, formatUnits, type Address } from "viem";
 import { robinhoodChain } from "./chain";
 import { PEA_TOKEN } from "./burn";
+import { cached } from "./kv";
 
 // PEA's PONS v2 bonding curve (used only before graduation). After graduation
 // the live market is a DEX pool, read from DexScreener below.
@@ -102,7 +103,8 @@ async function getEthUsd(): Promise<number> {
   }
 }
 
-/** Live $PEA market: DEX pool first (post-graduation), bonding curve as fallback. */
+/** Live $PEA market: DEX pool first (post-graduation), bonding curve as fallback.
+ *  Cached centrally so all visitors share one lookup per short window. */
 export async function getPeaPrice(): Promise<PeaPrice> {
-  return (await fromDex()) ?? (await fromCurve()) ?? EMPTY;
+  return cached("pea:price", 15, async () => (await fromDex()) ?? (await fromCurve()) ?? EMPTY);
 }

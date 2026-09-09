@@ -20,6 +20,7 @@ import type {
   TokenSearchResult,
 } from "./types";
 import type { TraderProfile, UserTrade, Portfolio, SocialTrader } from "./types";
+import { cached } from "./kv";
 import {
   mockLeaderboard,
   mockMarketStats,
@@ -78,6 +79,15 @@ export async function getLeaderboard(
   limit = 50,
 ): Promise<Trader[]> {
   if (!isLive) return mockLeaderboard(window, limit);
+  try {
+    return await cached(`lb:${window}:${limit}`, 20, () => fetchLeaderboard(window, limit));
+  } catch {
+    // API error (e.g. credits exhausted) — keep the UI alive with sample data.
+    return mockLeaderboard(window, limit);
+  }
+}
+
+async function fetchLeaderboard(window: LeaderboardWindow, limit: number): Promise<Trader[]> {
   const data = await fomoFetch<{ traders: any[] }>(`/v2/leaderboard/${window}?limit=${limit}`);
   const traders: Trader[] = (data.traders ?? []).map((t, i) => ({
     rank: t.rank ?? i + 1,
@@ -145,33 +155,36 @@ export function getMarketStats(window: LeaderboardWindow): MarketStats {
 export async function getTrending(limit = 10): Promise<BoardToken[]> {
   if (!isLive) return mockTrending(limit);
   try {
-    const data = await fomoFetch<{ available?: boolean; tokens?: any[] }>(
-      `/v2/leaderboard/tokens/trending?limit=${limit}`,
-      15, // keep the board price as fresh as the API allows
-    );
-    if (data.available === false || !data.tokens) return [];
-    return data.tokens
-      .filter((t: any) => isRobinhood(t.network))
-      .map((t: any, i: number) => ({
-        rank: t.rank ?? i + 1,
-        // Real token logo from fomo (falls back to a few common alias keys).
-        image: t.image ?? t.token?.image ?? t.token?.logo ?? t.logo ?? t.icon,
-        name: t.token?.name ?? t.name ?? t.token?.symbol ?? "",
-        symbol: t.token?.symbol ?? t.symbol ?? "",
-        address: t.token?.address ?? t.address ?? "",
-        network: t.network ?? ROBINHOOD_CHAIN,
-        holders: Number(t.holders ?? 0),
-        priceUsd: Number(t.priceUsd ?? t.token?.priceUsd ?? 0),
-        change24h: Number(t.change24h ?? 0),
-        marketCapUsd: Number(t.marketCapUsd ?? t.token?.marketCapUsd ?? 0),
-        volume24hUsd: Number(t.volume24hUsd ?? 0),
-        fomoBuyers: Number(t.fomoBuyers ?? 0),
-      }));
+    return await cached(`trending:${limit}`, 15, () => fetchTrending(limit));
   } catch {
-    // A failed/unauthorized trending call should not crash the dashboard —
-    // the board renders its "not available" state instead.
-    return [];
+    // API error (e.g. credits exhausted) — keep the board alive with samples.
+    return mockTrending(limit);
   }
+}
+
+async function fetchTrending(limit: number): Promise<BoardToken[]> {
+  const data = await fomoFetch<{ available?: boolean; tokens?: any[] }>(
+    `/v2/leaderboard/tokens/trending?limit=${limit}`,
+    15, // keep the board price as fresh as the API allows
+  );
+  if (data.available === false || !data.tokens) return [];
+  return data.tokens
+    .filter((t: any) => isRobinhood(t.network))
+    .map((t: any, i: number) => ({
+      rank: t.rank ?? i + 1,
+      // Real token logo from fomo (falls back to a few common alias keys).
+      image: t.image ?? t.token?.image ?? t.token?.logo ?? t.logo ?? t.icon,
+      name: t.token?.name ?? t.name ?? t.token?.symbol ?? "",
+      symbol: t.token?.symbol ?? t.symbol ?? "",
+      address: t.token?.address ?? t.address ?? "",
+      network: t.network ?? ROBINHOOD_CHAIN,
+      holders: Number(t.holders ?? 0),
+      priceUsd: Number(t.priceUsd ?? t.token?.priceUsd ?? 0),
+      change24h: Number(t.change24h ?? 0),
+      marketCapUsd: Number(t.marketCapUsd ?? t.token?.marketCapUsd ?? 0),
+      volume24hUsd: Number(t.volume24hUsd ?? 0),
+      fomoBuyers: Number(t.fomoBuyers ?? 0),
+    }));
 }
 
 export interface TokenMarket {
@@ -229,6 +242,15 @@ export async function getTokenMarket(address: string): Promise<TokenMarket> {
 
 export async function getAlerts(limit = 40): Promise<Alert[]> {
   if (!isLive) return mockAlerts(limit);
+  try {
+    return await cached(`alerts:${limit}`, 8, () => fetchAlerts(limit));
+  } catch {
+    // API error (e.g. credits exhausted) — keep the feed alive with samples.
+    return mockAlerts(limit);
+  }
+}
+
+async function fetchAlerts(limit: number): Promise<Alert[]> {
   // Robinhood Chain only: ask the API for this chain, and filter defensively.
   const data = await fomoFetch<any>(`/v2/alerts?limit=${limit}&chain=${ROBINHOOD_CHAIN}`, 0);
   const raw: any[] = Array.isArray(data) ? data : (data.alerts ?? data.items ?? []);
@@ -344,8 +366,19 @@ export async function getTraderProfile(handle: string): Promise<TraderProfile> {
   const h = stripAt(handle);
   if (!isLive) return mockTraderProfile(h);
   try {
-    const u = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}`, 15);
-    return {
+    return await cached(`trader:${h.toLowerCase()}`, 30, () => fetchTraderProfile(h));
+  } catch (e) {
+    // A genuine 404 means the handle really does not exist. Any other error
+    // (e.g. credits exhausted / rate limit) should not read as "not found" —
+    // fall back to sample data so the page still works.
+    const notFound = String((e as Error).message).includes("404");
+    return { ...mockTraderProfile(h), found: !notFound };
+  }
+}
+
+async function fetchTraderProfile(h: string): Promise<TraderProfile> {
+  const u = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}`, 15);
+  return {
       handle: u.handle ?? h,
       displayName: u.displayName ?? u.handle ?? h,
       found: true,
@@ -368,70 +401,79 @@ export async function getTraderProfile(handle: string): Promise<TraderProfile> {
       averageHoldTimeSeconds: u.averageHoldTimeSeconds,
       verified: Boolean(u.verified),
       topTokens: u.topTokens ?? [],
-    };
-  } catch {
-    return { ...mockTraderProfile(h), found: false };
-  }
+  };
 }
 
 export async function getUserTrades(handle: string, limit = 25): Promise<UserTrade[]> {
   const h = stripAt(handle);
   if (!isLive) return mockUserTrades(h, limit);
-  const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/trades?limit=${limit}`, 15);
-  if (data?.available === false) return [];
-  const items: any[] = Array.isArray(data) ? data : (data.trades ?? data.items ?? []);
-  return items.map((t, i) => ({
-    tradeId: String(t.tradeId ?? i),
-    tokenSymbol: t.token?.symbol ?? t.tokenSymbol ?? "",
-    tokenAddress: t.token?.address ?? t.tokenAddress,
-    status: t.status ?? "closed",
-    amount: Number(t.amount ?? 0),
-    avgEntryPrice: Number(t.avgEntryPrice ?? 0),
-    avgExitPrice: Number(t.avgExitPrice ?? 0),
-    realizedPnlUsd: Number(t.realizedPnlUsd ?? 0),
-    unrealizedPnlUsd: Number(t.unrealizedPnlUsd ?? 0),
-    createdAt: t.createdAt,
-    closedAt: t.closedAt ?? null,
-  }));
+  try {
+    const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/trades?limit=${limit}`, 15);
+    if (data?.available === false) return [];
+    const items: any[] = Array.isArray(data) ? data : (data.trades ?? data.items ?? []);
+    return items.map((t, i) => ({
+      tradeId: String(t.tradeId ?? i),
+      tokenSymbol: t.token?.symbol ?? t.tokenSymbol ?? "",
+      tokenAddress: t.token?.address ?? t.tokenAddress,
+      status: t.status ?? "closed",
+      amount: Number(t.amount ?? 0),
+      avgEntryPrice: Number(t.avgEntryPrice ?? 0),
+      avgExitPrice: Number(t.avgExitPrice ?? 0),
+      realizedPnlUsd: Number(t.realizedPnlUsd ?? 0),
+      unrealizedPnlUsd: Number(t.unrealizedPnlUsd ?? 0),
+      createdAt: t.createdAt,
+      closedAt: t.closedAt ?? null,
+    }));
+  } catch {
+    return mockUserTrades(h, limit);
+  }
 }
 
 export async function getUserBalances(handle: string): Promise<Portfolio> {
   const h = stripAt(handle);
   if (!isLive) return mockPortfolio(h);
-  // Robinhood Chain only: narrow to this chain, and filter defensively.
-  const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/balances?chain=${ROBINHOOD_CHAIN}`, 15);
-  const raw: any[] = data.holdings ?? [];
-  const holdings = raw
-    .filter((b) => b.chain == null || isRobinhood(b.chain ?? b.token?.networkId))
-    .map((b) => ({
-      tokenSymbol: b.token?.symbol ?? b.tokenSymbol ?? "",
-      tokenAddress: b.token?.address ?? b.tokenAddress,
-      chain: ROBINHOOD_CHAIN,
-      amount: Number(b.amount ?? 0),
-      priceUsd: Number(b.priceUsd ?? 0),
-      valueUsd: Number(b.valueUsd ?? 0),
-      change24h: Number(b.change24h ?? 0),
-    }));
-  const rh = (data.byChain && (data.byChain.robinhood ?? data.byChain[ROBINHOOD_NETWORK_ID])) || undefined;
-  return {
-    totalValueUsd: rh?.valueUsd ?? holdings.reduce((s, h) => s + h.valueUsd, 0),
-    byChain: rh ? { robinhood: rh } : {},
-    holdings: holdings.sort((a, b) => b.valueUsd - a.valueUsd),
-  };
+  try {
+    // Robinhood Chain only: narrow to this chain, and filter defensively.
+    const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/balances?chain=${ROBINHOOD_CHAIN}`, 15);
+    const raw: any[] = data.holdings ?? [];
+    const holdings = raw
+      .filter((b) => b.chain == null || isRobinhood(b.chain ?? b.token?.networkId))
+      .map((b) => ({
+        tokenSymbol: b.token?.symbol ?? b.tokenSymbol ?? "",
+        tokenAddress: b.token?.address ?? b.tokenAddress,
+        chain: ROBINHOOD_CHAIN,
+        amount: Number(b.amount ?? 0),
+        priceUsd: Number(b.priceUsd ?? 0),
+        valueUsd: Number(b.valueUsd ?? 0),
+        change24h: Number(b.change24h ?? 0),
+      }));
+    const rh = (data.byChain && (data.byChain.robinhood ?? data.byChain[ROBINHOOD_NETWORK_ID])) || undefined;
+    return {
+      totalValueUsd: rh?.valueUsd ?? holdings.reduce((s, h) => s + h.valueUsd, 0),
+      byChain: rh ? { robinhood: rh } : {},
+      holdings: holdings.sort((a, b) => b.valueUsd - a.valueUsd),
+    };
+  } catch {
+    return mockPortfolio(h);
+  }
 }
 
 export async function getUserFollowing(handle: string, limit = 50): Promise<SocialTrader[]> {
   const h = stripAt(handle);
   if (!isLive) return mockFollowing(h, limit);
-  const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/following?limit=${limit}`, 30);
-  const items: any[] = Array.isArray(data) ? data : (data.following ?? data.items ?? []);
-  return items.map((t) => ({
-    handle: t.handle,
-    displayName: t.displayName ?? t.handle,
-    followers: Number(t.followers ?? 0),
-    trades: Number(t.trades ?? 0),
-    volumeUsd: Number(t.volumeUsd ?? 0),
-    pnl24h: Number(t.pnl24h ?? 0),
-    verified: Boolean(t.verified),
-  }));
+  try {
+    const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/following?limit=${limit}`, 30);
+    const items: any[] = Array.isArray(data) ? data : (data.following ?? data.items ?? []);
+    return items.map((t) => ({
+      handle: t.handle,
+      displayName: t.displayName ?? t.handle,
+      followers: Number(t.followers ?? 0),
+      trades: Number(t.trades ?? 0),
+      volumeUsd: Number(t.volumeUsd ?? 0),
+      pnl24h: Number(t.pnl24h ?? 0),
+      verified: Boolean(t.verified),
+    }));
+  } catch {
+    return mockFollowing(h, limit);
+  }
 }

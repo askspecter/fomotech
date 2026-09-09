@@ -6,7 +6,7 @@ import { useLocalList } from "@/lib/useLocalList";
 import type { Alert } from "@/lib/types";
 import { fmtUsd, timeAgo } from "@/lib/format";
 
-const POLL_MS = Number(process.env.NEXT_PUBLIC_FEED_POLL_MS ?? 15000);
+const POLL_MS = Math.max(5000, Number(process.env.NEXT_PUBLIC_FEED_POLL_MS) || 15000);
 const WHALE_USD = 25000;
 
 export default function AlertsPage() {

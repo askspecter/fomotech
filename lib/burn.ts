@@ -1,5 +1,6 @@
 import { createPublicClient, http, formatUnits, type Address } from "viem";
 import { robinhoodChain } from "./chain";
+import { cached } from "./kv";
 
 const ERC20 = [
   {
@@ -35,6 +36,10 @@ export interface BurnInfo {
  * so it never depends on the explorer's indexer or its bot gate.
  */
 export async function getPeaBurn(): Promise<BurnInfo> {
+  return cached("pea:burn", 20, fetchPeaBurn);
+}
+
+async function fetchPeaBurn(): Promise<BurnInfo> {
   const client = createPublicClient({ chain: robinhoodChain, transport: http() });
   const [decimals, supplyRaw, ...balances] = await Promise.all([
     client.readContract({ address: PEA_TOKEN, abi: ERC20, functionName: "decimals" }),
