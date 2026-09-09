@@ -23,8 +23,9 @@ export function fmtPct(n: number): string {
   return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 }
 
-export function timeAgo(iso: string): string {
-  const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+export function timeAgo(when: string | number): string {
+  const ms = typeof when === "number" ? when : new Date(when).getTime();
+  const s = Math.max(1, Math.floor((Date.now() - ms) / 1000));
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m`;

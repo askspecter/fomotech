@@ -1,68 +1,121 @@
-// Shared domain types for the fomo companion platform.
-// These describe the shape the UI consumes. The API client (fomo-api.ts)
-// is responsible for mapping whatever the real fomo API returns into these.
+// Domain types the UI consumes, mapped from the fomo API (api.fomoapi.io).
+// The API client (fomo-api.ts) maps raw API responses into these shapes.
 
+export type LeaderboardWindow = "24h" | "7d" | "30d" | "all";
+
+// Derived market summary (fomo has no single "market stats" endpoint — we
+// compute these from the leaderboard window).
 export interface MarketStats {
-  totalVolume24h: number;
-  activeTraders24h: number;
-  totalTrades24h: number;
-  volumeChangePct: number; // vs previous 24h
+  window: LeaderboardWindow;
+  totalVolumeUsd: number;
+  totalPnlUsd: number;
+  activeTraders: number;
+  totalTrades: number;
 }
 
-export interface TimePoint {
-  t: string; // ISO timestamp or label
-  value: number;
-}
-
-export interface TrendingToken {
-  symbol: string;
-  name: string;
-  chain: string;
-  priceUsd: number;
-  change24hPct: number;
-  volume24h: number;
-  buys24h: number;
-  sells24h: number;
-  address?: string;
-}
-
+// /v2/leaderboard/{window}
 export interface Trader {
   rank: number;
-  address: string;
-  handle?: string;
-  avatarUrl?: string;
+  handle: string;
+  displayName: string;
   pnlUsd: number;
-  pnlPct: number;
   volumeUsd: number;
-  winRatePct: number;
-  followers: number;
   trades: number;
+  followers: number;
+  holdings: number;
+  wallets: { solana?: string; evm?: string };
+  topTokens: string[];
+  verified: boolean;
 }
 
-export type TradeSide = "buy" | "sell";
-
-export interface FeedTrade {
-  id: string;
-  time: string; // ISO
-  side: TradeSide;
-  traderHandle?: string;
-  traderAddress: string;
-  tokenSymbol: string;
-  chain: string;
-  amountUsd: number;
-  isWhale: boolean;
-}
-
-export type RiskLevel = "low" | "medium" | "high";
-
-export interface TokenSafety {
-  symbol: string;
+// /v2/leaderboard/tokens/{board}
+export interface BoardToken {
+  rank: number;
+  image?: string;
   name: string;
-  chain: string;
+  symbol: string;
   address: string;
-  priceUsd: number;
-  liquidityUsd: number;
+  network: string;
   holders: number;
-  risk: RiskLevel;
-  checks: { label: string; passed: boolean }[];
+  priceUsd: number;
+  change24h: number;
+  marketCapUsd: number;
+  volume24hUsd: number;
+  fomoBuyers: number;
+}
+
+// /v2/alerts (firehose)
+export type AlertType = "buy" | "sell" | "thesis" | "whale" | "price" | "trade" | "follow";
+
+export interface Alert {
+  id: string;
+  alertType: AlertType | string;
+  source: string; // "feed" | "push"
+  trader: string | null;
+  token: string | null;
+  tokenAddress?: string | null;
+  chainId?: number;
+  chain?: string;
+  usdValue: number | null;
+  text: string;
+  ts: number; // ms epoch
+}
+
+// /v2/tokens/search
+export interface TokenSearchResult {
+  symbol: string;
+  address: string;
+  name: string;
+  image?: string;
+  marketCapUsd: number;
+}
+
+// /v2/token/{address}/stats
+export interface TokenWindow {
+  buys: number;
+  sells: number;
+  uniqueBuyers: number;
+  uniqueSellers: number;
+  buyVolumeUsd: number;
+  sellVolumeUsd: number;
+  netVolumeUsd: number;
+  buySellRatio: number | null;
+}
+
+export interface TokenStats {
+  holders: number;
+  top10HoldersPercent: number;
+  windows: Partial<Record<"5m" | "1h" | "4h" | "24h", TokenWindow>>;
+}
+
+// /token/{address}/holders
+export interface TokenHolder {
+  handle: string;
+  amount: number;
+  valueUsd: number;
+  priceUsd: number;
+}
+
+// /v2/token/{address}/devs
+export interface TokenDev {
+  handle: string | null;
+  wallet?: { solana?: string; evm?: string };
+  isDev: boolean;
+  amount: number;
+  valueUsd: number;
+  costBasisUsd: number;
+  averageEntryPrice: number;
+  realizedPnlUsd: number;
+  unrealizedPnlUsd: number;
+  thesis?: string;
+}
+
+export interface TokenIntel {
+  query: string;
+  found: boolean;
+  meta?: TokenSearchResult;
+  networkId?: number;
+  stats?: TokenStats;
+  holders: TokenHolder[];
+  devs: TokenDev[];
 }

@@ -1,124 +1,164 @@
 import type {
+  LeaderboardWindow,
   MarketStats,
-  TimePoint,
-  TrendingToken,
   Trader,
-  FeedTrade,
-  TokenSafety,
+  BoardToken,
+  Alert,
+  TokenIntel,
+  TokenWindow,
 } from "./types";
 
-const CHAINS = ["Solana", "Base", "Ethereum", "BSC", "Arbitrum"];
-const TOKENS = ["PEPE", "WIF", "BONK", "POPCAT", "MOG", "TURBO", "DEGEN", "BRETT"];
-const HANDLES = ["cryptowhale", "degenape", "moonboy", "satoshi_jr", "alphachad", "pumpqueen", "gmfrog", "liquidsnake"];
+const CHAINS = ["robinhood", "solana", "base", "bsc", "ethereum"];
+const TOKENS = ["PONS", "PEPE", "WIF", "BONK", "POPCAT", "MOG", "TURBO", "DEGEN"];
+const HANDLES = ["CryptoKaleo", "frankdegods", "ansem", "theveeman", "cosekant", "pumpqueen", "gmfrog", "alphachad"];
 
-function rand(min: number, max: number): number {
-  return Math.random() * (max - min) + min;
+const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+
+function solAddr(): string {
+  const c = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789";
+  return Array.from({ length: 44 }, () => pick(c.split(""))).join("");
+}
+function evmAddr(): string {
+  const h = "0123456789abcdef";
+  return "0x" + Array.from({ length: 40 }, () => pick(h.split(""))).join("");
 }
 
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function shortAddr(): string {
-  const hex = "0123456789abcdef";
-  let s = "0x";
-  for (let i = 0; i < 4; i++) s += pick(hex.split(""));
-  s += "...";
-  for (let i = 0; i < 4; i++) s += pick(hex.split(""));
-  return s;
-}
-
-export function mockMarketStats(): MarketStats {
-  return {
-    totalVolume24h: rand(8_000_000, 24_000_000),
-    activeTraders24h: Math.floor(rand(12_000, 38_000)),
-    totalTrades24h: Math.floor(rand(180_000, 520_000)),
-    volumeChangePct: rand(-18, 32),
-  };
-}
-
-export function mockVolumeSeries(points = 24): TimePoint[] {
-  const out: TimePoint[] = [];
-  let base = rand(400_000, 900_000);
-  for (let i = points - 1; i >= 0; i--) {
-    base = Math.max(50_000, base + rand(-120_000, 140_000));
-    out.push({ t: `${i}h`, value: Math.round(base) });
-  }
-  return out.reverse();
-}
-
-export function mockTrending(n = 8): TrendingToken[] {
-  return Array.from({ length: n }).map((_, i) => {
-    const buys = Math.floor(rand(200, 4000));
-    const sells = Math.floor(rand(150, 3800));
-    return {
-      symbol: TOKENS[i % TOKENS.length],
-      name: `${TOKENS[i % TOKENS.length]} Token`,
-      chain: pick(CHAINS),
-      priceUsd: rand(0.0000001, 3),
-      change24hPct: rand(-45, 120),
-      volume24h: rand(200_000, 6_000_000),
-      buys24h: buys,
-      sells24h: sells,
-      address: shortAddr(),
-    };
-  });
-}
-
-export function mockLeaderboard(n = 20): Trader[] {
-  return Array.from({ length: n })
+export function mockLeaderboard(window: LeaderboardWindow, limit = 30): Trader[] {
+  const scale = window === "24h" ? 1 : window === "7d" ? 4 : window === "30d" ? 9 : 14;
+  return Array.from({ length: limit })
     .map((_, i) => ({
       rank: i + 1,
-      address: shortAddr(),
-      handle: HANDLES[i % HANDLES.length] + (i > 7 ? i : ""),
-      pnlUsd: rand(2_000, 480_000) * (i < 3 ? 2 : 1),
-      pnlPct: rand(8, 340),
-      volumeUsd: rand(50_000, 4_000_000),
-      winRatePct: rand(48, 92),
+      handle: HANDLES[i % HANDLES.length] + (i >= HANDLES.length ? i : ""),
+      displayName: HANDLES[i % HANDLES.length].toUpperCase(),
+      pnlUsd: rand(2_000, 160_000) * scale * (i < 3 ? 1.8 : 1),
+      volumeUsd: rand(40_000, 900_000) * scale,
+      trades: Math.floor(rand(20, 400) * scale),
       followers: Math.floor(rand(120, 42_000)),
-      trades: Math.floor(rand(40, 2200)),
+      holdings: Math.floor(rand(1, 18)),
+      wallets: { solana: solAddr(), evm: evmAddr() },
+      topTokens: [evmAddr().slice(0, 8), evmAddr().slice(0, 8)],
+      verified: Math.random() > 0.5,
     }))
     .sort((a, b) => b.pnlUsd - a.pnlUsd)
     .map((t, i) => ({ ...t, rank: i + 1 }));
 }
 
-export function mockFeed(n = 30): FeedTrade[] {
+export function mockMarketStats(window: LeaderboardWindow): MarketStats {
+  const board = mockLeaderboard(window, 50);
+  return {
+    window,
+    totalVolumeUsd: board.reduce((s, t) => s + t.volumeUsd, 0),
+    totalPnlUsd: board.reduce((s, t) => s + t.pnlUsd, 0),
+    activeTraders: board.length,
+    totalTrades: board.reduce((s, t) => s + t.trades, 0),
+  };
+}
+
+export function mockTrending(limit = 10): BoardToken[] {
+  return Array.from({ length: limit }).map((_, i) => ({
+    rank: i + 1,
+    name: `${TOKENS[i % TOKENS.length]} Token`,
+    symbol: TOKENS[i % TOKENS.length],
+    address: Math.random() > 0.5 ? solAddr() : evmAddr(),
+    network: pick(CHAINS),
+    holders: Math.floor(rand(200, 60_000)),
+    priceUsd: rand(0.0000001, 3),
+    change24h: rand(-45, 140),
+    marketCapUsd: rand(200_000, 80_000_000),
+    volume24hUsd: rand(100_000, 9_000_000),
+    fomoBuyers: Math.floor(rand(5, 900)),
+  }));
+}
+
+export function mockAlerts(limit = 40): Alert[] {
   const now = Date.now();
-  return Array.from({ length: n }).map((_, i) => {
-    const amountUsd = rand(50, 85_000);
+  const types = ["buy", "sell", "buy", "sell", "thesis", "whale", "price"];
+  return Array.from({ length: limit }).map((_, i) => {
+    const alertType = pick(types);
+    const trader = alertType === "price" ? null : pick(HANDLES);
+    const token = pick(TOKENS);
+    const usd =
+      alertType === "thesis" || alertType === "price" ? null : rand(50, 90_000);
+    const verb = alertType === "buy" ? "bought" : alertType === "sell" ? "sold" : alertType;
     return {
-      id: `t_${now}_${i}`,
-      time: new Date(now - i * rand(2000, 45000)).toISOString(),
-      side: Math.random() > 0.48 ? "buy" : "sell",
-      traderHandle: pick(HANDLES),
-      traderAddress: shortAddr(),
-      tokenSymbol: pick(TOKENS),
+      id: `alrt_${now}_${i}`,
+      alertType,
+      source: Math.random() > 0.8 ? "push" : "feed",
+      trader,
+      token,
+      tokenAddress: Math.random() > 0.5 ? solAddr() : evmAddr(),
       chain: pick(CHAINS),
-      amountUsd,
-      isWhale: amountUsd > 25_000,
+      usdValue: usd,
+      text:
+        alertType === "price"
+          ? `${token} is up ${Math.floor(rand(20, 120))}% in the last hour`
+          : alertType === "thesis"
+            ? `${trader} wrote a thesis on $${token}`
+            : `${trader} ${verb} $${token}${usd ? ` ($${Math.round(usd / 1000)}K size)` : ""}`,
+      ts: now - i * rand(2000, 40000),
     };
   });
 }
 
-export function mockTokenSafety(query: string): TokenSafety {
-  const symbol = (query || pick(TOKENS)).toUpperCase().slice(0, 8);
-  const score = rand(0, 1);
-  const risk = score > 0.66 ? "low" : score > 0.33 ? "medium" : "high";
+function mockWindow(mult: number): TokenWindow {
+  const buys = Math.floor(rand(10, 400) * mult);
+  const sells = Math.floor(rand(8, 360) * mult);
+  const buyVol = rand(5_000, 400_000) * mult;
+  const sellVol = rand(4_000, 380_000) * mult;
   return {
-    symbol,
-    name: `${symbol} Token`,
-    chain: pick(CHAINS),
-    address: shortAddr(),
-    priceUsd: rand(0.0000001, 2),
-    liquidityUsd: rand(5_000, 2_500_000),
-    holders: Math.floor(rand(120, 85_000)),
-    risk,
-    checks: [
-      { label: "Liquidity locked", passed: score > 0.4 },
-      { label: "Contract verified", passed: score > 0.3 },
-      { label: "No mint authority", passed: score > 0.55 },
-      { label: "Not a honeypot", passed: score > 0.25 },
-      { label: "Ownership renounced", passed: score > 0.6 },
-    ],
+    buys,
+    sells,
+    uniqueBuyers: Math.floor(buys * rand(0.4, 0.9)),
+    uniqueSellers: Math.floor(sells * rand(0.4, 0.9)),
+    buyVolumeUsd: buyVol,
+    sellVolumeUsd: sellVol,
+    netVolumeUsd: buyVol - sellVol,
+    buySellRatio: sells === 0 ? null : +(buys / sells).toFixed(2),
+  };
+}
+
+export function mockTokenIntel(query: string): TokenIntel {
+  const symbol = (query || pick(TOKENS)).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "PONS";
+  const address = Math.random() > 0.5 ? solAddr() : evmAddr();
+  return {
+    query,
+    found: true,
+    meta: {
+      symbol,
+      address,
+      name: `${symbol} Token`,
+      marketCapUsd: rand(200_000, 60_000_000),
+    },
+    stats: {
+      holders: Math.floor(rand(300, 70_000)),
+      top10HoldersPercent: rand(8, 62),
+      windows: {
+        "5m": mockWindow(0.1),
+        "1h": mockWindow(0.4),
+        "4h": mockWindow(1),
+        "24h": mockWindow(3),
+      },
+    },
+    holders: Array.from({ length: 8 }).map(() => {
+      const priceUsd = rand(0.0000001, 2);
+      const amount = rand(1_000, 5_000_000);
+      return { handle: pick(HANDLES), amount, priceUsd, valueUsd: amount * priceUsd };
+    }).sort((a, b) => b.valueUsd - a.valueUsd),
+    devs: Array.from({ length: Math.random() > 0.4 ? 2 : 0 }).map(() => {
+      const cost = rand(2_000, 90_000);
+      return {
+        handle: pick(HANDLES),
+        wallet: { solana: solAddr() },
+        isDev: true,
+        amount: rand(10_000, 9_000_000),
+        valueUsd: rand(1_000, 120_000),
+        costBasisUsd: cost,
+        averageEntryPrice: rand(0.0000001, 1),
+        realizedPnlUsd: rand(-20_000, 60_000),
+        unrealizedPnlUsd: rand(-30_000, 80_000),
+        thesis: "Early dev position. Watching liquidity.",
+      };
+    }),
   };
 }

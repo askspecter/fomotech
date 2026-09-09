@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getFeed } from "@/lib/fomo-api";
+import { getAlerts } from "@/lib/fomo-api";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const feed = await getFeed();
-    return NextResponse.json({ feed });
+    const alerts = await getAlerts(40);
+    return NextResponse.json({ alerts });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 });
   }

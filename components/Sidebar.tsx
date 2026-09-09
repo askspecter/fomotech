@@ -7,7 +7,7 @@ const NAV = [
   { href: "/", label: "Dashboard", icon: "◎" },
   { href: "/leaderboard", label: "Leaderboard", icon: "♛" },
   { href: "/feed", label: "Live Feed", icon: "⚡" },
-  { href: "/tokens", label: "Token Scanner", icon: "🛡" },
+  { href: "/tokens", label: "Token Intel", icon: "🛡" },
 ];
 
 export default function Sidebar() {

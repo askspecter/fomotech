@@ -1,145 +1,228 @@
-// Pluggable fomo API client.
+// Pluggable fomo API client (https://api.fomoapi.io).
 //
-// This module is the single seam between the UI and the data source.
-// - When NEXT_PUBLIC_FOMO_DATA_SOURCE !== "live", every function returns
-//   built-in sample data so the whole app runs with zero configuration.
-// - When set to "live", each function calls the real fomo API. You only
-//   need to fill in the endpoint paths + response mapping in the marked
-//   spots once you share the API's shape.
+// Single seam between the UI and the data source:
+// - NEXT_PUBLIC_FOMO_DATA_SOURCE !== "live"  -> built-in sample data (0 credits)
+// - "live"                                   -> real fomo API with your Bearer key
 //
-// All live calls are meant to run server-side (route handlers / server
-// components) so FOMO_API_KEY is never shipped to the browser.
+// All live calls run server-side (server components / route handlers) so
+// FOMO_API_KEY never reaches the browser.
 
 import type {
+  LeaderboardWindow,
   MarketStats,
-  TimePoint,
-  TrendingToken,
   Trader,
-  FeedTrade,
-  TokenSafety,
+  BoardToken,
+  Alert,
+  TokenIntel,
+  TokenStats,
+  TokenHolder,
+  TokenDev,
+  TokenSearchResult,
 } from "./types";
 import {
-  mockMarketStats,
-  mockVolumeSeries,
-  mockTrending,
   mockLeaderboard,
-  mockFeed,
-  mockTokenSafety,
+  mockMarketStats,
+  mockTrending,
+  mockAlerts,
+  mockTokenIntel,
 } from "./mock";
 
 const DATA_SOURCE = process.env.NEXT_PUBLIC_FOMO_DATA_SOURCE ?? "mock";
-const BASE_URL = process.env.FOMO_API_BASE_URL ?? "";
+const BASE_URL = (process.env.FOMO_API_BASE_URL ?? "https://api.fomoapi.io").replace(/\/$/, "");
 const API_KEY = process.env.FOMO_API_KEY ?? "";
 
 export const isLive = DATA_SOURCE === "live";
 
-/**
- * Thin fetch wrapper for the fomo API. Adjust headers/auth to match what
- * your API expects (Bearer token, x-api-key, etc.).
- */
-async function fomoFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!BASE_URL) throw new Error("FOMO_API_BASE_URL is not set");
+/** Friendly chain name -> fomo networkId (needed for tokens outside the directory). */
+export const NETWORK_IDS: Record<string, number> = {
+  robinhood: 4663,
+  solana: 1399811149,
+  ethereum: 1,
+  eth: 1,
+  base: 8453,
+  bsc: 56,
+};
+
+async function fomoFetch<T>(path: string, revalidate = 30): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
     headers: {
-      "content-type": "application/json",
-      // TODO: match your API's auth scheme:
-      Authorization: API_KEY ? `Bearer ${API_KEY}` : "",
-      // "x-api-key": API_KEY,
-      ...(init?.headers ?? {}),
+      authorization: API_KEY ? `Bearer ${API_KEY}` : "",
+      accept: "application/json",
     },
-    // Revalidate every 15s for near-real-time data; tune per endpoint.
-    next: { revalidate: 15 },
+    next: { revalidate },
   });
   if (!res.ok) {
-    throw new Error(`fomo API ${path} -> ${res.status} ${res.statusText}`);
+    const body = await res.text().catch(() => "");
+    throw new Error(`fomo API ${path} -> ${res.status} ${res.statusText} ${body.slice(0, 200)}`);
   }
   return (await res.json()) as T;
 }
 
-// ---------------------------------------------------------------------------
-// Each getter: live branch (fill in path + mapping) OR mock fallback.
-// ---------------------------------------------------------------------------
+// --- Leaderboard ----------------------------------------------------------
 
-export async function getMarketStats(): Promise<MarketStats> {
-  if (!isLive) return mockMarketStats();
-  // TODO: replace with real endpoint, e.g. "/v1/market/stats"
-  const raw = await fomoFetch<any>("/market/stats");
-  return {
-    totalVolume24h: raw.totalVolume24h ?? 0,
-    activeTraders24h: raw.activeTraders24h ?? 0,
-    totalTrades24h: raw.totalTrades24h ?? 0,
-    volumeChangePct: raw.volumeChangePct ?? 0,
-  };
-}
-
-export async function getVolumeSeries(): Promise<TimePoint[]> {
-  if (!isLive) return mockVolumeSeries();
-  const raw = await fomoFetch<any[]>("/market/volume?window=24h");
-  return raw.map((p) => ({ t: String(p.t ?? p.time), value: Number(p.value ?? p.volume) }));
-}
-
-export async function getTrending(): Promise<TrendingToken[]> {
-  if (!isLive) return mockTrending();
-  const raw = await fomoFetch<any[]>("/tokens/trending");
-  return raw.map((t) => ({
-    symbol: t.symbol,
-    name: t.name ?? t.symbol,
-    chain: t.chain,
-    priceUsd: Number(t.priceUsd ?? t.price),
-    change24hPct: Number(t.change24hPct ?? t.change24h),
-    volume24h: Number(t.volume24h),
-    buys24h: Number(t.buys24h ?? 0),
-    sells24h: Number(t.sells24h ?? 0),
-    address: t.address,
-  }));
-}
-
-export async function getLeaderboard(): Promise<Trader[]> {
-  if (!isLive) return mockLeaderboard();
-  const raw = await fomoFetch<any[]>("/traders/leaderboard");
-  return raw.map((t, i) => ({
+export async function getLeaderboard(
+  window: LeaderboardWindow = "24h",
+  limit = 50,
+): Promise<Trader[]> {
+  if (!isLive) return mockLeaderboard(window, limit);
+  const data = await fomoFetch<{ traders: any[] }>(`/v2/leaderboard/${window}?limit=${limit}`);
+  return (data.traders ?? []).map((t, i) => ({
     rank: t.rank ?? i + 1,
-    address: t.address,
-    handle: t.handle ?? t.username,
-    avatarUrl: t.avatarUrl,
-    pnlUsd: Number(t.pnlUsd ?? t.pnl),
-    pnlPct: Number(t.pnlPct ?? 0),
-    volumeUsd: Number(t.volumeUsd ?? t.volume),
-    winRatePct: Number(t.winRatePct ?? t.winRate),
-    followers: Number(t.followers ?? 0),
+    handle: t.handle,
+    displayName: t.displayName ?? t.handle,
+    pnlUsd: Number(t.pnlUsd ?? 0),
+    volumeUsd: Number(t.volumeUsd ?? 0),
     trades: Number(t.trades ?? 0),
+    followers: Number(t.followers ?? 0),
+    holdings: Number(t.holdings ?? 0),
+    wallets: { solana: t.wallets?.solana, evm: t.wallets?.evm },
+    topTokens: t.topTokens ?? [],
+    verified: Boolean(t.verified),
   }));
 }
 
-export async function getFeed(): Promise<FeedTrade[]> {
-  if (!isLive) return mockFeed();
-  const raw = await fomoFetch<any[]>("/feed/trades");
-  return raw.map((f) => ({
-    id: String(f.id),
-    time: f.time ?? f.timestamp,
-    side: f.side,
-    traderHandle: f.traderHandle ?? f.handle,
-    traderAddress: f.traderAddress ?? f.address,
-    tokenSymbol: f.tokenSymbol ?? f.symbol,
-    chain: f.chain,
-    amountUsd: Number(f.amountUsd ?? f.amount),
-    isWhale: Boolean(f.isWhale ?? Number(f.amountUsd ?? f.amount) > 25000),
-  }));
-}
-
-export async function getTokenSafety(query: string): Promise<TokenSafety> {
-  if (!isLive) return mockTokenSafety(query);
-  const raw = await fomoFetch<any>(`/tokens/safety?q=${encodeURIComponent(query)}`);
+/** Pure: derive the dashboard summary from a leaderboard snapshot. */
+export function deriveMarketStats(traders: Trader[], window: LeaderboardWindow): MarketStats {
   return {
-    symbol: raw.symbol,
-    name: raw.name ?? raw.symbol,
-    chain: raw.chain,
-    address: raw.address,
-    priceUsd: Number(raw.priceUsd ?? raw.price),
-    liquidityUsd: Number(raw.liquidityUsd ?? raw.liquidity),
-    holders: Number(raw.holders ?? 0),
-    risk: raw.risk ?? "medium",
-    checks: raw.checks ?? [],
+    window,
+    totalVolumeUsd: traders.reduce((s, t) => s + t.volumeUsd, 0),
+    totalPnlUsd: traders.reduce((s, t) => s + t.pnlUsd, 0),
+    activeTraders: traders.length,
+    totalTrades: traders.reduce((s, t) => s + t.trades, 0),
   };
+}
+
+export function getMarketStats(window: LeaderboardWindow): MarketStats {
+  // Mock-only convenience; live path derives from getLeaderboard.
+  return mockMarketStats(window);
+}
+
+// --- Token boards ---------------------------------------------------------
+
+export async function getTrending(limit = 10): Promise<BoardToken[]> {
+  if (!isLive) return mockTrending(limit);
+  const data = await fomoFetch<{ available?: boolean; tokens?: any[] }>(
+    `/v2/leaderboard/tokens/trending?limit=${limit}`,
+  );
+  if (data.available === false || !data.tokens) return [];
+  return data.tokens.map((t, i) => ({
+    rank: t.rank ?? i + 1,
+    image: t.image,
+    name: t.token?.name ?? t.name ?? t.token?.symbol ?? "",
+    symbol: t.token?.symbol ?? t.symbol ?? "",
+    address: t.token?.address ?? t.address ?? "",
+    network: t.network ?? "",
+    holders: Number(t.holders ?? 0),
+    priceUsd: Number(t.priceUsd ?? 0),
+    change24h: Number(t.change24h ?? 0),
+    marketCapUsd: Number(t.marketCapUsd ?? 0),
+    volume24hUsd: Number(t.volume24hUsd ?? 0),
+    fomoBuyers: Number(t.fomoBuyers ?? 0),
+  }));
+}
+
+// --- Alerts (live feed) ---------------------------------------------------
+
+export async function getAlerts(limit = 40): Promise<Alert[]> {
+  if (!isLive) return mockAlerts(limit);
+  const data = await fomoFetch<any>(`/v2/alerts?limit=${limit}`, 0);
+  const items: any[] = Array.isArray(data) ? data : (data.alerts ?? data.items ?? []);
+  return items.map((a, i) => ({
+    id: String(a.id ?? `${a.ts ?? Date.now()}_${i}`),
+    alertType: a.alertType ?? a.type ?? "trade",
+    source: a.source ?? "feed",
+    trader: a.trader ?? null,
+    token: a.token ?? null,
+    tokenAddress: a.tokenAddress ?? null,
+    chainId: a.chainId,
+    chain: a.chain,
+    usdValue: a.usdValue ?? null,
+    text: a.text ?? "",
+    ts: Number(a.ts ?? Date.now()),
+  }));
+}
+
+// --- Token intel (scanner) ------------------------------------------------
+
+function looksLikeAddress(q: string): boolean {
+  return /^0x[0-9a-fA-F]{40}$/.test(q) || (q.length >= 32 && /^[A-Za-z0-9]+$/.test(q));
+}
+
+export async function searchTokens(q: string, limit = 8): Promise<TokenSearchResult[]> {
+  if (!isLive) {
+    const m = mockTokenIntel(q).meta!;
+    return [m];
+  }
+  const data = await fomoFetch<any>(`/v2/tokens/search?q=${encodeURIComponent(q)}&limit=${limit}`, 30);
+  const items: any[] = Array.isArray(data) ? data : (data.results ?? data.tokens ?? []);
+  return items.map((t) => ({
+    symbol: t.symbol,
+    address: t.address,
+    name: t.name ?? t.symbol,
+    image: t.image,
+    marketCapUsd: Number(t.marketCapUsd ?? 0),
+  }));
+}
+
+export async function getTokenIntel(query: string, networkId?: number): Promise<TokenIntel> {
+  if (!isLive) return mockTokenIntel(query);
+
+  let address = query.trim();
+  let meta: TokenSearchResult | undefined;
+
+  if (!looksLikeAddress(address)) {
+    const results = await searchTokens(address, 1);
+    if (!results.length) return { query, found: false, holders: [], devs: [] };
+    meta = results[0];
+    address = meta.address;
+  }
+
+  const net = networkId ? `?networkId=${networkId}` : "";
+
+  const [statsR, holdersR, devsR] = await Promise.allSettled([
+    fomoFetch<any>(`/v2/token/${address}/stats${net}`, 15),
+    fomoFetch<any>(`/token/${address}/holders?limit=15`, 15),
+    fomoFetch<any>(`/v2/token/${address}/devs${net}`, 15),
+  ]);
+
+  let stats: TokenStats | undefined;
+  if (statsR.status === "fulfilled" && statsR.value) {
+    const s = statsR.value;
+    stats = {
+      holders: Number(s.holders ?? 0),
+      top10HoldersPercent: Number(s.top10HoldersPercent ?? 0),
+      windows: s.windows ?? {},
+    };
+  }
+
+  const holders: TokenHolder[] =
+    holdersR.status === "fulfilled"
+      ? (Array.isArray(holdersR.value) ? holdersR.value : holdersR.value?.holders ?? []).map((h: any) => ({
+          handle: h.handle,
+          amount: Number(h.amount ?? 0),
+          valueUsd: Number(h.valueUsd ?? 0),
+          priceUsd: Number(h.priceUsd ?? 0),
+        }))
+      : [];
+
+  const devsRaw =
+    devsR.status === "fulfilled"
+      ? Array.isArray(devsR.value)
+        ? devsR.value
+        : devsR.value?.devs ?? devsR.value?.holders ?? []
+      : [];
+  const devs: TokenDev[] = devsRaw.map((d: any) => ({
+    handle: d.handle ?? null,
+    wallet: d.wallet,
+    isDev: Boolean(d.isDev),
+    amount: Number(d.amount ?? 0),
+    valueUsd: Number(d.valueUsd ?? 0),
+    costBasisUsd: Number(d.costBasisUsd ?? 0),
+    averageEntryPrice: Number(d.averageEntryPrice ?? 0),
+    realizedPnlUsd: Number(d.realizedPnlUsd ?? 0),
+    unrealizedPnlUsd: Number(d.unrealizedPnlUsd ?? 0),
+    thesis: d.thesis,
+  }));
+
+  return { query, found: true, meta, networkId, stats, holders, devs };
 }
