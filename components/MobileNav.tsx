@@ -13,6 +13,7 @@ type IconKey =
   | "trader"
   | "copytrade"
   | "launchpad"
+  | "card"
   | "more";
 
 const PATHS: Record<IconKey, string> = {
@@ -20,6 +21,7 @@ const PATHS: Record<IconKey, string> = {
   leaderboard: "M4 20h4v-8H4v8Zm6 0h4V4h-4v16Zm6 0h4v-6h-4v6Z",
   feed: "M13 2 3 14h7l-1 8 10-12h-7l1-8Z",
   token: "M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z",
+  card: "M3 6h18v12H3zM7 10a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8ZM5 14.5c0-1.3 1-2 2-2s2 .7 2 2M13 9h5M13 12.5h5M13 15.5h3",
   alerts: "M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6-2-2v-4a5 5 0 0 0-4-4.9V4a1 1 0 0 0-2 0v1.1A5 5 0 0 0 7 10v4l-2 2v1h14v-1Z",
   trader: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5Z",
   copytrade: "M8 8V5l-5 4 5 4v-3h9V8H8Zm8 8v-3l5 4-5 4v-3H7v-2h9Z",
@@ -45,6 +47,7 @@ const PRIMARY: { href: string; label: string; icon: IconKey }[] = [
 
 const MORE: { href: string; label: string; icon: IconKey }[] = [
   { href: "/tokens", label: "Token Intel", icon: "token" },
+  { href: "/card", label: "Trader Card", icon: "card" },
   { href: "/alerts", label: "Alerts", icon: "alerts" },
   { href: "/copytrade", label: "Copytrade", icon: "copytrade" },
 ];
