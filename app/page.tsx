@@ -9,6 +9,7 @@ import PeaToken from "@/components/PeaToken";
 import BurnTracker from "@/components/BurnTracker";
 import { getLeaderboard, deriveMarketStats, getTrending, getTokenMarket, isLive } from "@/lib/fomo-api";
 import { getPeaBurn } from "@/lib/burn";
+import { getPeaPrice } from "@/lib/pea-price";
 
 const PEA_CA = process.env.NEXT_PUBLIC_PEA_TOKEN || "0xd046a0B73dBE5b4E00F507526C35E5426C873f99";
 import { fmtUsd, fmtNum, fmtPct } from "@/lib/format";
@@ -27,11 +28,12 @@ export default async function DashboardPage({
     ? searchParams.window
     : "24h") as LeaderboardWindow;
 
-  const [traders, trending, peaMarket, peaBurn] = await Promise.all([
+  const [traders, trending, peaMarket, peaBurn, peaPrice] = await Promise.all([
     getLeaderboard(window, 50),
     getTrending(10),
     getTokenMarket(PEA_CA),
     getPeaBurn().catch(() => ({ burned: null as number | null, supply: null as number | null })),
+    getPeaPrice().catch(() => ({ priceUsd: null, marketCap: null, priceEth: null, ethUsd: null })),
   ]);
   const stats = deriveMarketStats(traders, window);
   const topPnl = traders.slice(0, 10).map((t) => ({ handle: t.handle, pnlUsd: t.pnlUsd }));
@@ -81,7 +83,10 @@ export default async function DashboardPage({
         </section>
 
         {/* Official $PEA token, real-time from the explorer + fomo board price */}
-        <PeaToken fallbackPrice={peaMarket.priceUsd} fallbackMarketCap={peaMarket.marketCapUsd} />
+        <PeaToken
+          fallbackPrice={peaPrice.priceUsd ?? peaMarket.priceUsd}
+          fallbackMarketCap={peaPrice.marketCap ?? peaMarket.marketCapUsd}
+        />
 
         {/* Live buyback & burn tracker */}
         <BurnTracker initialBurned={peaBurn.burned} initialSupply={peaBurn.supply} />

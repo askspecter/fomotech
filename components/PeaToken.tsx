@@ -35,7 +35,34 @@ export default function PeaToken({
   fallbackMarketCap?: number;
 }) {
   const [d, setD] = useState<PeaData | null>(null);
+  const [live, setLive] = useState<{ price?: number; marketCap?: number }>({});
   const [copied, setCopied] = useState(false);
+
+  // Live $PEA price + market cap from the PONS bonding curve (server RPC).
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/pea-price", { cache: "no-store" });
+        if (!res.ok) return;
+        const j = await res.json();
+        if (!cancelled) {
+          setLive({
+            price: typeof j.priceUsd === "number" ? j.priceUsd : undefined,
+            marketCap: typeof j.marketCap === "number" ? j.marketCap : undefined,
+          });
+        }
+      } catch {
+        /* keep last */
+      }
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,10 +97,11 @@ export default function PeaToken({
     };
   }, []);
 
-  // Price: explorer exchange_rate first, then the fomo board fallback.
-  const price = d?.price ?? fallbackPrice;
-  // Market cap: explorer circulating cap, else price x supply, else fomo board.
+  // Price: live PONS curve first, then explorer, then the SSR/board fallback.
+  const price = live.price ?? d?.price ?? fallbackPrice;
+  // Market cap: live PONS value, else explorer cap, else price x supply, else fallback.
   const marketCap =
+    live.marketCap ??
     d?.marketCap ??
     (price != null && d?.supply != null ? price * d.supply : undefined) ??
     fallbackMarketCap;
