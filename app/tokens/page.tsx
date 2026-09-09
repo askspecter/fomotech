@@ -167,7 +167,7 @@ export default function TokensPage() {
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <h3 className="mb-1 font-semibold">Dev positions</h3>
                 <p className="mb-3 text-xs text-muted">
-                  Empty means fomo knows of no dev holding — not a clean bill of health.
+                  Empty means fomo knows of no dev holding, not a clean bill of health.
                 </p>
                 {intel.devs.length === 0 ? (
                   <p className="py-4 text-sm text-muted">No dev holdings reported.</p>

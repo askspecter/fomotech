@@ -6,6 +6,10 @@ import type {
   Alert,
   TokenIntel,
   TokenWindow,
+  TraderProfile,
+  UserTrade,
+  Portfolio,
+  SocialTrader,
 } from "./types";
 
 const CHAINS = ["robinhood", "solana", "base", "bsc", "ethereum"];
@@ -161,4 +165,102 @@ export function mockTokenIntel(query: string): TokenIntel {
       };
     }),
   };
+}
+
+// --- Trader profile / trades / portfolio / following --------------------------
+
+function cleanHandle(h: string): string {
+  return (h || pick(HANDLES)).replace(/^@/, "") || pick(HANDLES);
+}
+
+export function mockTraderProfile(handle: string): TraderProfile {
+  const h = cleanHandle(handle);
+  const all = rand(20_000, 480_000);
+  return {
+    handle: h,
+    displayName: h.toUpperCase(),
+    found: true,
+    pnlUsd: all,
+    pnl: {
+      "24h": rand(-8_000, 30_000),
+      "7d": rand(-20_000, 90_000),
+      "30d": rand(10_000, 200_000),
+      all,
+    },
+    volumeUsd: rand(80_000, 3_000_000),
+    trades: Math.floor(rand(40, 900)),
+    followers: Math.floor(rand(200, 42_000)),
+    following: Math.floor(rand(20, 400)),
+    holdings: Math.floor(rand(2, 16)),
+    wallets: { solana: solAddr(), evm: evmAddr() },
+    description: "Trader on fomo. Momentum and memecoins.",
+    accountAgeDays: Math.floor(rand(30, 400)),
+    averageHoldTimeSeconds: Math.floor(rand(600, 120_000)),
+    verified: Math.random() > 0.4,
+    topTokens: [pick(TOKENS), pick(TOKENS)],
+  };
+}
+
+export function mockUserTrades(handle: string, n = 20): UserTrade[] {
+  const now = Date.now();
+  return Array.from({ length: n }).map((_, i) => {
+    const open = Math.random() > 0.5;
+    const entry = rand(0.0000001, 2);
+    const exit = entry * rand(0.3, 4);
+    const amount = rand(1_000, 4_000_000);
+    return {
+      tradeId: `tr_${now}_${i}`,
+      tokenSymbol: pick(TOKENS),
+      tokenAddress: Math.random() > 0.5 ? solAddr() : evmAddr(),
+      status: open ? "open" : "closed",
+      amount,
+      avgEntryPrice: entry,
+      avgExitPrice: open ? 0 : exit,
+      realizedPnlUsd: open ? 0 : (exit - entry) * amount,
+      unrealizedPnlUsd: open ? rand(-15_000, 40_000) : 0,
+      createdAt: new Date(now - i * rand(3_600_000, 86_400_000)).toISOString(),
+      closedAt: open ? null : new Date(now - i * rand(600_000, 3_600_000)).toISOString(),
+    };
+  });
+}
+
+export function mockPortfolio(handle: string): Portfolio {
+  const chains = ["robinhood", "solana", "base", "bsc", "ethereum"];
+  const holdings = Array.from({ length: 7 }).map(() => {
+    const priceUsd = rand(0.0000001, 3);
+    const amount = rand(1_000, 6_000_000);
+    return {
+      tokenSymbol: pick(TOKENS),
+      tokenAddress: Math.random() > 0.5 ? solAddr() : evmAddr(),
+      chain: pick(chains),
+      amount,
+      priceUsd,
+      valueUsd: amount * priceUsd,
+      change24h: rand(-40, 120),
+    };
+  }).sort((a, b) => b.valueUsd - a.valueUsd);
+
+  const byChain: Record<string, { holdings: number; valueUsd: number }> = {};
+  for (const h of holdings) {
+    byChain[h.chain] ??= { holdings: 0, valueUsd: 0 };
+    byChain[h.chain].holdings += 1;
+    byChain[h.chain].valueUsd += h.valueUsd;
+  }
+  return {
+    totalValueUsd: holdings.reduce((s, h) => s + h.valueUsd, 0),
+    byChain,
+    holdings,
+  };
+}
+
+export function mockFollowing(handle: string, n = 20): SocialTrader[] {
+  return Array.from({ length: n }).map((_, i) => ({
+    handle: HANDLES[i % HANDLES.length] + (i >= HANDLES.length ? i : ""),
+    displayName: HANDLES[i % HANDLES.length].toUpperCase(),
+    followers: Math.floor(rand(120, 40_000)),
+    trades: Math.floor(rand(20, 800)),
+    volumeUsd: rand(40_000, 2_000_000),
+    pnl24h: rand(-10_000, 50_000),
+    verified: Math.random() > 0.5,
+  })).sort((a, b) => b.pnl24h - a.pnl24h);
 }

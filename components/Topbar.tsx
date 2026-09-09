@@ -1,8 +1,17 @@
 import { isLive } from "@/lib/fomo-api";
+import { WalletButton } from "./WalletButton";
 
-export default function Topbar({ title, subtitle }: { title: string; subtitle?: string }) {
+export default function Topbar({
+  title,
+  subtitle,
+  wallet = false,
+}: {
+  title: string;
+  subtitle?: string;
+  wallet?: boolean;
+}) {
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-bg/80 px-5 py-4 backdrop-blur">
+    <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-bg/80 px-5 py-4 backdrop-blur">
       <div>
         <h1 className="text-lg font-bold tracking-tight">{title}</h1>
         {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
@@ -10,14 +19,13 @@ export default function Topbar({ title, subtitle }: { title: string; subtitle?: 
       <div className="flex items-center gap-2">
         <span
           className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${
-            isLive
-              ? "border-up/40 bg-up/10 text-up"
-              : "border-border bg-surface-2 text-muted"
+            isLive ? "border-up/40 bg-up/10 text-up" : "border-border bg-surface-2 text-muted"
           }`}
         >
           <span className={`h-2 w-2 rounded-full ${isLive ? "bg-up" : "bg-muted"}`} />
           {isLive ? "Live API" : "Sample data"}
         </span>
+        {wallet && <WalletButton />}
       </div>
     </header>
   );

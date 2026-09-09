@@ -63,7 +63,7 @@ export default function FeedPage() {
             onClick={() => setPaused((p) => !p)}
             className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-2"
           >
-            {paused ? "▶ Resume" : "⏸ Pause"}
+            {paused ? "Resume" : "Pause"}
           </button>
           <div className="inline-flex rounded-lg border border-border bg-surface p-1 text-sm">
             {(["all", "buy", "sell", "thesis", "whale"] as Filter[]).map((f) => (
@@ -103,7 +103,7 @@ export default function FeedPage() {
                 <div className="truncate text-sm">{a.text || `${a.trader ?? ""} · ${a.token ?? ""}`}</div>
                 <div className="flex items-center gap-2 text-xs text-muted">
                   {a.chain && <span className="capitalize">{a.chain}</span>}
-                  {a.source === "push" && <span>📱 push</span>}
+                  {a.source === "push" && <span>push</span>}
                 </div>
               </div>
               <div className="text-right">

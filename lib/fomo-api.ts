@@ -19,12 +19,17 @@ import type {
   TokenDev,
   TokenSearchResult,
 } from "./types";
+import type { TraderProfile, UserTrade, Portfolio, SocialTrader } from "./types";
 import {
   mockLeaderboard,
   mockMarketStats,
   mockTrending,
   mockAlerts,
   mockTokenIntel,
+  mockTraderProfile,
+  mockUserTrades,
+  mockPortfolio,
+  mockFollowing,
 } from "./mock";
 
 const DATA_SOURCE = process.env.NEXT_PUBLIC_FOMO_DATA_SOURCE ?? "mock";
@@ -225,4 +230,102 @@ export async function getTokenIntel(query: string, networkId?: number): Promise<
   }));
 
   return { query, found: true, meta, networkId, stats, holders, devs };
+}
+
+// --- Trader profile / trades / portfolio / following ------------------------
+
+function stripAt(handle: string): string {
+  return handle.trim().replace(/^@/, "");
+}
+
+export async function getTraderProfile(handle: string): Promise<TraderProfile> {
+  const h = stripAt(handle);
+  if (!isLive) return mockTraderProfile(h);
+  try {
+    const u = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}`, 15);
+    return {
+      handle: u.handle ?? h,
+      displayName: u.displayName ?? u.handle ?? h,
+      found: true,
+      pnlUsd: Number(u.pnlUsd ?? 0),
+      pnl: {
+        "24h": Number(u.pnl?.["24h"] ?? 0),
+        "7d": Number(u.pnl?.["7d"] ?? 0),
+        "30d": Number(u.pnl?.["30d"] ?? 0),
+        all: Number(u.pnl?.all ?? u.pnlUsd ?? 0),
+      },
+      volumeUsd: Number(u.volumeUsd ?? u.totalVolume ?? 0),
+      trades: Number(u.trades ?? u.numTrades ?? 0),
+      followers: Number(u.followers ?? 0),
+      following: Number(u.following ?? 0),
+      holdings: Number(u.holdings ?? 0),
+      wallets: { solana: u.wallets?.solana, evm: u.wallets?.evm },
+      profilePictureLink: u.profilePictureLink,
+      description: u.description,
+      accountAgeDays: u.accountAgeDays,
+      averageHoldTimeSeconds: u.averageHoldTimeSeconds,
+      verified: Boolean(u.verified),
+      topTokens: u.topTokens ?? [],
+    };
+  } catch {
+    return { ...mockTraderProfile(h), found: false };
+  }
+}
+
+export async function getUserTrades(handle: string, limit = 25): Promise<UserTrade[]> {
+  const h = stripAt(handle);
+  if (!isLive) return mockUserTrades(h, limit);
+  const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/trades?limit=${limit}`, 15);
+  if (data?.available === false) return [];
+  const items: any[] = Array.isArray(data) ? data : (data.trades ?? data.items ?? []);
+  return items.map((t, i) => ({
+    tradeId: String(t.tradeId ?? i),
+    tokenSymbol: t.token?.symbol ?? t.tokenSymbol ?? "",
+    tokenAddress: t.token?.address ?? t.tokenAddress,
+    status: t.status ?? "closed",
+    amount: Number(t.amount ?? 0),
+    avgEntryPrice: Number(t.avgEntryPrice ?? 0),
+    avgExitPrice: Number(t.avgExitPrice ?? 0),
+    realizedPnlUsd: Number(t.realizedPnlUsd ?? 0),
+    unrealizedPnlUsd: Number(t.unrealizedPnlUsd ?? 0),
+    createdAt: t.createdAt,
+    closedAt: t.closedAt ?? null,
+  }));
+}
+
+export async function getUserBalances(handle: string): Promise<Portfolio> {
+  const h = stripAt(handle);
+  if (!isLive) return mockPortfolio(h);
+  const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/balances`, 15);
+  const raw: any[] = data.holdings ?? [];
+  const holdings = raw.map((b) => ({
+    tokenSymbol: b.token?.symbol ?? b.tokenSymbol ?? "",
+    tokenAddress: b.token?.address ?? b.tokenAddress,
+    chain: b.chain ?? "",
+    amount: Number(b.amount ?? 0),
+    priceUsd: Number(b.priceUsd ?? 0),
+    valueUsd: Number(b.valueUsd ?? 0),
+    change24h: Number(b.change24h ?? 0),
+  }));
+  return {
+    totalValueUsd: Number(data.totalValueUsd ?? holdings.reduce((s, h) => s + h.valueUsd, 0)),
+    byChain: data.byChain ?? {},
+    holdings: holdings.sort((a, b) => b.valueUsd - a.valueUsd),
+  };
+}
+
+export async function getUserFollowing(handle: string, limit = 50): Promise<SocialTrader[]> {
+  const h = stripAt(handle);
+  if (!isLive) return mockFollowing(h, limit);
+  const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/following?limit=${limit}`, 30);
+  const items: any[] = Array.isArray(data) ? data : (data.following ?? data.items ?? []);
+  return items.map((t) => ({
+    handle: t.handle,
+    displayName: t.displayName ?? t.handle,
+    followers: Number(t.followers ?? 0),
+    trades: Number(t.trades ?? 0),
+    volumeUsd: Number(t.volumeUsd ?? 0),
+    pnl24h: Number(t.pnl24h ?? 0),
+    verified: Boolean(t.verified),
+  }));
 }

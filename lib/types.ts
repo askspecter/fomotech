@@ -119,3 +119,67 @@ export interface TokenIntel {
   holders: TokenHolder[];
   devs: TokenDev[];
 }
+
+// /v2/users/{handle}
+export interface TraderProfile {
+  handle: string;
+  displayName: string;
+  found: boolean;
+  pnlUsd: number;
+  pnl: { "24h": number; "7d": number; "30d": number; all: number };
+  volumeUsd: number;
+  trades: number;
+  followers: number;
+  following: number;
+  holdings: number;
+  wallets: { solana?: string; evm?: string };
+  profilePictureLink?: string;
+  description?: string;
+  accountAgeDays?: number;
+  averageHoldTimeSeconds?: number;
+  verified: boolean;
+  topTokens: string[];
+}
+
+// /v2/users/{handle}/trades
+export interface UserTrade {
+  tradeId: string;
+  tokenSymbol: string;
+  tokenAddress?: string;
+  status: "open" | "closed" | string;
+  amount: number;
+  avgEntryPrice: number;
+  avgExitPrice: number;
+  realizedPnlUsd: number;
+  unrealizedPnlUsd: number;
+  createdAt?: string;
+  closedAt?: string | null;
+}
+
+// /v2/users/{handle}/balances
+export interface Balance {
+  tokenSymbol: string;
+  tokenAddress?: string;
+  chain: string;
+  amount: number;
+  priceUsd: number;
+  valueUsd: number;
+  change24h: number;
+}
+
+export interface Portfolio {
+  totalValueUsd: number;
+  byChain: Record<string, { holdings: number; valueUsd: number }>;
+  holdings: Balance[];
+}
+
+// /v2/users/{handle}/following (and /followers, same shape)
+export interface SocialTrader {
+  handle: string;
+  displayName: string;
+  followers: number;
+  trades: number;
+  volumeUsd: number;
+  pnl24h: number;
+  verified: boolean;
+}

@@ -6,12 +6,16 @@ single page.
 
 ## Modules
 
-| Route          | Module        | fomo API used                                                    |
-| -------------- | ------------- | ---------------------------------------------------------------- |
-| `/`            | Dashboard     | `/v2/leaderboard/{window}` + `/v2/leaderboard/tokens/trending`   |
-| `/leaderboard` | Leaderboard   | `/v2/leaderboard/{window}` (24h · 7d · 30d · all)                |
-| `/feed`        | Live Feed     | `/v2/alerts` firehose (buy/sell/thesis/whale), polled            |
-| `/tokens`      | Token Intel   | `/v2/token/{addr}/stats` + `/token/{addr}/holders` + `/devs`     |
+| Route          | Module          | Data source                                                      |
+| -------------- | --------------- | ---------------------------------------------------------------- |
+| `/`            | Dashboard       | `/v2/leaderboard/{window}` + `/v2/leaderboard/tokens/trending`   |
+| `/leaderboard` | Leaderboard     | `/v2/leaderboard/{window}` (24h, 7d, 30d, all)                   |
+| `/feed`        | Live Feed       | `/v2/alerts` firehose (buy/sell/thesis/whale), polled            |
+| `/tokens`      | Token Intel     | `/v2/token/{addr}/stats` + `/token/{addr}/holders` + `/devs`     |
+| `/alerts`      | Alerts          | `/v2/alerts` filtered to a watchlist of traders/tokens + whales  |
+| `/trader`      | Trader Explorer | `/v2/users/{handle}` + `/trades` + `/balances` + `/following`    |
+| `/copytrade`   | Copytrade       | copied handles matched against `/v2/leaderboard/24h`             |
+| `/launchpad`   | Launchpad       | PONS v2 contracts on Robinhood Chain (wallet-signed)             |
 
 - **Dashboard** — market summary (volume, net PnL, traders, trades) derived
   from the leaderboard, a top-traders-by-PnL chart, and the trending-tokens board.
@@ -21,12 +25,40 @@ single page.
   and a pause button.
 - **Token Intel** — smart-money holders, multi-window flow (net volume, buy/sell
   counts, top-10 concentration), and dev positions with their thesis (rug signal).
+- **Alerts** — a per-browser watchlist of traders and tokens; the `/v2/alerts`
+  stream is filtered to your watchlist plus whale moves over $25k.
+- **Trader Explorer** — a trader's profile, portfolio, recent trades, and who
+  they follow. Add them to Copytrade or your Alerts watchlist in one click.
+- **Copytrade** — the traders you copy, ranked by live 24h PnL. To keep credit
+  use low, copied handles are matched against the 24h leaderboard (1 credit)
+  rather than resolved one profile at a time (10 credits each).
+- **Launchpad** — turn a fomo profile into a token and deploy it on the PONS v2
+  bonding curve (Robinhood Chain). Seeds the token name, ticker, and avatar from
+  the trader's profile; your own wallet signs the non-custodial launch.
+
+## Launchpad (PONS v2)
+
+The launchpad reuses the proven PONS v2 launch engine (the same contracts used by
+[Pork / Launchpad-Base](https://github.com/askspecter/Launchpad-Base)), ported into
+`lib/pons/`:
+
+- `lib/chain.ts` — Robinhood Chain (id 4663)
+- `lib/pons/registry.ts` — verified v2 contract addresses + quote assets
+- `lib/pons/abisV2.ts` — verified factory ABI (launchToken / launchAndBuy)
+- `lib/pons/readerV2.ts` — launch configs, quote assets, fee, whitelist gate
+- `lib/pons/v2.ts` — prepares the signed launch plan
+
+Deploy flow: pick a fomo profile, edit the token, pick a quote asset (ETH or an
+RWA pair), then sign. The app simulates the transaction first so a revert shows
+its real reason before any gas is spent. PONS v2 is unaudited and public launches
+are whitelist gated, so the UI reads `canLaunch()` and warns up front.
 
 ## Tech stack
 
 - **Next.js 14** (App Router) + **TypeScript**
-- **Tailwind CSS** (dark crypto-app theme)
+- **Tailwind CSS** (dark theme)
 - **Recharts** for charts
+- **wagmi + viem + RainbowKit** for the non-custodial wallet (launchpad)
 - Route handlers under `app/api/*` keep your API key server-side
 
 ## Connecting the fomo API
