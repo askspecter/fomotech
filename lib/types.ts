@@ -18,6 +18,8 @@ export interface Trader {
   rank: number;
   handle: string;
   displayName: string;
+  /** Profile picture URL, when available (inline on the board or resolved). */
+  image?: string;
   pnlUsd: number;
   volumeUsd: number;
   trades: number;

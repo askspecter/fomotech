@@ -79,10 +79,14 @@ export async function getLeaderboard(
 ): Promise<Trader[]> {
   if (!isLive) return mockLeaderboard(window, limit);
   const data = await fomoFetch<{ traders: any[] }>(`/v2/leaderboard/${window}?limit=${limit}`);
-  return (data.traders ?? []).map((t, i) => ({
+  const traders: Trader[] = (data.traders ?? []).map((t, i) => ({
     rank: t.rank ?? i + 1,
     handle: t.handle,
     displayName: t.displayName ?? t.handle,
+    // The leaderboard usually omits an avatar; map it defensively in case the
+    // live response includes one (free), else it is resolved below / falls back
+    // to a generated identicon in the UI.
+    image: t.profilePictureLink ?? t.image ?? t.pfp ?? t.avatar ?? undefined,
     pnlUsd: Number(t.pnlUsd ?? 0),
     volumeUsd: Number(t.volumeUsd ?? 0),
     trades: Number(t.trades ?? 0),
@@ -92,6 +96,32 @@ export async function getLeaderboard(
     topTokens: t.topTokens ?? [],
     verified: Boolean(t.verified),
   }));
+
+  // Opt-in: resolve real profile pictures for the top N traders via
+  // /v2/users/{handle} (10 credits each, cached 1h). Off by default to protect
+  // the credit budget — set FOMO_AVATAR_RESOLVE_COUNT to enable.
+  const resolveCount = Math.max(0, Number(process.env.FOMO_AVATAR_RESOLVE_COUNT ?? 0));
+  if (resolveCount > 0) {
+    await Promise.all(
+      traders.slice(0, resolveCount).map(async (t) => {
+        if (t.image) return;
+        const url = await resolveAvatar(t.handle);
+        if (url) t.image = url;
+      }),
+    );
+  }
+
+  return traders;
+}
+
+/** Resolve a single trader's profile picture (10 credits, cached 1h). */
+async function resolveAvatar(handle: string): Promise<string | undefined> {
+  try {
+    const u = await fomoFetch<any>(`/v2/users/${encodeURIComponent(stripAt(handle))}`, 3600);
+    return u.profilePictureLink ?? u.image ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Pure: derive the dashboard summary from a leaderboard snapshot. */
@@ -117,6 +147,7 @@ export async function getTrending(limit = 10): Promise<BoardToken[]> {
   try {
     const data = await fomoFetch<{ available?: boolean; tokens?: any[] }>(
       `/v2/leaderboard/tokens/trending?limit=${limit}`,
+      15, // keep the board price as fresh as the API allows
     );
     if (data.available === false || !data.tokens) return [];
     return data.tokens

@@ -1,6 +1,7 @@
 import Topbar from "@/components/Topbar";
 import WindowTabs from "@/components/WindowTabs";
 import Verified from "@/components/Verified";
+import Avatar from "@/components/Avatar";
 import { getLeaderboard } from "@/lib/fomo-api";
 import { fmtUsd, fmtNum } from "@/lib/format";
 import type { LeaderboardWindow } from "@/lib/types";
@@ -51,12 +52,17 @@ export default async function LeaderboardPage({
                     </span>
                   </td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-1.5 font-semibold">
-                      @{t.handle}
-                      {t.verified && <Verified className="text-brand-bright" />}
-                    </div>
-                    <div className="font-mono text-xs text-muted">
-                      {t.wallets.evm ? `${t.wallets.evm.slice(0, 6)}…${t.wallets.evm.slice(-4)}` : ""}
+                    <div className="flex items-center gap-3">
+                      <Avatar image={t.image} handle={t.handle} />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 font-semibold">
+                          @{t.handle}
+                          {t.verified && <Verified className="text-brand-bright" />}
+                        </div>
+                        <div className="font-mono text-xs text-muted">
+                          {t.wallets.evm ? `${t.wallets.evm.slice(0, 6)}…${t.wallets.evm.slice(-4)}` : ""}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td className={`px-5 py-4 text-right font-semibold tabular-nums ${t.pnlUsd >= 0 ? "text-up" : "text-down"}`}>
