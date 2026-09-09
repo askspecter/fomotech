@@ -17,6 +17,7 @@ interface TraderData {
 export default function TraderPage() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [data, setData] = useState<TraderData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [following, setFollowing] = useState<SocialTrader[] | null>(null);
@@ -31,15 +32,24 @@ export default function TraderPage() {
     setLoading(true);
     setError(null);
     setFollowing(null);
+    setData(null);
     try {
-      const res = await fetch(`/api/trader?handle=${encodeURIComponent(q)}`, { cache: "no-store" });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Lookup failed");
-      setData(body);
+      // 1) Profile first — one fast call, shown immediately.
+      const pr = await fetch(`/api/profile?handle=${encodeURIComponent(q)}`, { cache: "no-store" });
+      const pb = await pr.json();
+      if (!pr.ok || !pb.profile?.found) throw new Error("Trader not found on fomo");
+      setData({ profile: pb.profile });
+      setLoading(false);
+      // 2) Trades + portfolio in the background (heavier calls).
+      setDetailsLoading(true);
+      fetch(`/api/trader?handle=${encodeURIComponent(pb.profile.handle)}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((b) => setData((d) => (d ? { ...d, trades: b.trades, portfolio: b.portfolio } : d)))
+        .catch(() => {})
+        .finally(() => setDetailsLoading(false));
     } catch (err) {
       setError((err as Error).message);
       setData(null);
-    } finally {
       setLoading(false);
     }
   }
@@ -140,7 +150,13 @@ export default function TraderPage() {
                     </span>
                   )}
                 </div>
-                {!data?.portfolio || data.portfolio.holdings.length === 0 ? (
+                {detailsLoading && !data?.portfolio ? (
+                  <div className="space-y-2 py-1">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="h-6 w-full skeleton" />
+                    ))}
+                  </div>
+                ) : !data?.portfolio || data.portfolio.holdings.length === 0 ? (
                   <p className="py-4 text-sm text-muted">No holdings.</p>
                 ) : (
                   <ul className="space-y-2">
@@ -160,7 +176,13 @@ export default function TraderPage() {
               {/* Recent trades */}
               <div className="card p-5">
                 <h3 className="mb-3 font-semibold">Recent trades</h3>
-                {!data?.trades || data.trades.length === 0 ? (
+                {detailsLoading && !data?.trades ? (
+                  <div className="space-y-2 py-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="h-6 w-full skeleton" />
+                    ))}
+                  </div>
+                ) : !data?.trades || data.trades.length === 0 ? (
                   <p className="py-4 text-sm text-muted">No trades available.</p>
                 ) : (
                   <ul className="space-y-2">
