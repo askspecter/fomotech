@@ -31,7 +31,7 @@ export default function TokenPrice({ address, fallbackUsd }: { address?: string;
         const rate = Number(data?.exchange_rate);
         if (!cancelled && Number.isFinite(rate) && rate > 0) setPrice(rate);
       } catch {
-        /* explorer unreachable / gated / no CORS — keep the fomo board price */
+        /* explorer unreachable / gated / no CORS, keep the fomo board price */
       }
     })();
     return () => {

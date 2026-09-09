@@ -15,7 +15,7 @@ body {
   color: #eef1f8;
 }
 
-/* Cinematic ambient light — cool blue sources on deep navy, echoing the PEA
+/* Cinematic ambient light: cool blue sources on deep navy, echoing the PEA
    cover art (steel-blue rim light on a dark field). */
 body::before {
   content: "";
@@ -27,6 +27,12 @@ body::before {
     radial-gradient(1000px 560px at 82% -12%, rgba(91, 124, 255, 0.18), transparent 60%),
     radial-gradient(720px 460px at 4% 6%, rgba(120, 150, 255, 0.08), transparent 55%),
     radial-gradient(900px 700px at 50% 120%, rgba(16, 22, 52, 0.6), transparent 60%);
+  animation: auroraDrift 22s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
 }
 
 /* Fine grid + edge vignette for depth. */
@@ -83,9 +89,9 @@ h3 {
   .card {
     @apply rounded-xl2 border border-border bg-surface bg-card shadow-card;
   }
-  /* Card that lifts on hover — for interactive/feature panels. */
+  /* Card that lifts on hover, for interactive or feature panels. */
   .card-hover {
-    @apply card transition duration-300 hover:-translate-y-0.5 hover:border-brand/40;
+    @apply card transition duration-300 hover:-translate-y-1 hover:border-brand/50 hover:shadow-glow-sm;
   }
   .gradient-text {
     @apply bg-brand bg-clip-text text-transparent;
@@ -131,7 +137,66 @@ h3 {
   animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Staggered rise for grids/lists — set style="animation-delay:..." per item. */
+/* Staggered rise for grids or lists; set style="animation-delay:..." per item. */
 .rise-2 {
   animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---- Cinematic motion ---------------------------------------------------- */
+
+/* Slow drift of the ambient light so the background feels alive. */
+@keyframes auroraDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.9; }
+  50% { transform: translate3d(-2.5%, 2%, 0) scale(1.09); opacity: 1; }
+}
+
+/* Ken Burns: hero art breathes with a very slow zoom + pan. */
+@keyframes kenburns {
+  0% { transform: scale(1.06) translate3d(0, 0, 0); }
+  100% { transform: scale(1.16) translate3d(-1.5%, -1.5%, 0); }
+}
+.kenburns { animation: kenburns 26s ease-in-out infinite alternate; will-change: transform; }
+
+/* A light sweep that crosses a surface once in a while. */
+@keyframes sweep {
+  0% { transform: translateX(-140%) skewX(-14deg); }
+  55%, 100% { transform: translateX(320%) skewX(-14deg); }
+}
+.shine { position: relative; overflow: hidden; }
+.shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42%;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(157, 176, 255, 0.14), transparent);
+  transform: translateX(-140%) skewX(-14deg);
+  animation: sweep 7s ease-in-out infinite;
+}
+
+/* Gentle float for accent orbs. */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.floaty { animation: floaty 8s ease-in-out infinite; }
+
+/* Text-gradient shimmer for the headline highlight. */
+@keyframes hueSlide {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.gradient-anim {
+  background: linear-gradient(90deg, #7d97ff, #9db0ff, #5b7cff, #9db0ff, #7d97ff);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hueSlide 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kenburns, .shine::after, .floaty, .gradient-anim { animation: none; }
 }

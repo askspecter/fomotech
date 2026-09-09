@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s · PEA",
   },
   description:
-    "PEA — analytics, leaderboard, live feed, trader explorer, copytrade, and a PONS v2 launchpad for the fomo social trading ecosystem.",
+    "PEA. Analytics, leaderboard, live feed, trader explorer, copytrade, and a PONS v2 launchpad for the fomo social trading ecosystem.",
 };
 
 export const viewport: Viewport = {

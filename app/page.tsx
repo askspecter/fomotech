@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Topbar from "@/components/Topbar";
 import StatCard from "@/components/StatCard";
 import PnlBarChart from "@/components/PnlBarChart";
@@ -29,29 +30,39 @@ export default async function DashboardPage({
     <>
       <Topbar title="Dashboard" subtitle="Market overview across the fomo ecosystem" />
       <div className="space-y-7 p-5">
-        {/* Cinematic hero band — PEA cover art */}
-        <section className="rise card relative overflow-hidden p-6 sm:p-8">
+        {/* Cinematic hero band */}
+        <section className="rise shine card relative overflow-hidden p-6 sm:p-9">
           <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center"
+            className="kenburns pointer-events-none absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: "url(/pea-cover.png)" }}
           />
           {/* Legibility scrim: solid at the text (left), fading to reveal the art (right). */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-surface via-surface/85 to-surface/20" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface/70 to-transparent" />
-          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface/75 to-transparent" />
+          <div className="floaty pointer-events-none absolute -right-12 top-4 hidden h-44 w-44 rounded-full bg-brand/25 blur-3xl lg:block" />
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-xl">
               <div className="eyebrow flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand shadow-[0_0_8px] shadow-brand" />
                 PEA · fomo companion
               </div>
-              <h1 className="mt-3 font-display text-3xl font-black leading-[1.05] tracking-tight sm:text-4xl">
-                The <span className="gradient-text">fomo</span> market,
+              <h1 className="mt-3 font-display text-4xl font-black leading-[1.03] tracking-tight sm:text-5xl">
+                The <span className="gradient-anim">fomo</span> market,
                 <br className="hidden sm:block" /> in one command deck.
               </h1>
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                Live leaderboard, signal feed, and token intel — aggregated from the top{" "}
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">
+                Live leaderboard, signal feed, and token intel, aggregated from the top{" "}
                 <span className="font-semibold text-white">{stats.activeTraders}</span> traders on Robinhood Chain.
               </p>
+              <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                <Link href="/leaderboard" className="btn-brand inline-flex items-center gap-2 px-4 py-2.5 text-sm">
+                  Open leaderboard
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </Link>
+                <Link href="/feed" className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface-2/50 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-brand/40 hover:bg-surface-2">
+                  Live feed
+                </Link>
+              </div>
             </div>
             <div className="shrink-0">
               <WindowTabs active={window} />
