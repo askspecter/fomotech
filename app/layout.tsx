@@ -3,15 +3,22 @@ import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
+import PWA from "@/components/PWA";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
+  applicationName: "PEA",
   title: {
     default: "PEA",
     template: "%s · PEA",
   },
   description:
     "PEA. Analytics, leaderboard, live feed, trader explorer, copytrade, and a PONS v2 launchpad for the fomo social trading ecosystem.",
+  appleWebApp: {
+    capable: true,
+    title: "PEA",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
@@ -28,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="min-w-0 flex-1 pb-24 md:pb-0">{children}</main>
           </div>
           <MobileNav />
+          <PWA />
         </Providers>
       </body>
     </html>
