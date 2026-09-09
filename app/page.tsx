@@ -7,11 +7,7 @@ import TokenLogo from "@/components/TokenLogo";
 import TokenPrice from "@/components/TokenPrice";
 import PeaToken from "@/components/PeaToken";
 import BurnTracker from "@/components/BurnTracker";
-import { getLeaderboard, deriveMarketStats, getTrending, getTokenMarket, isLive } from "@/lib/fomo-api";
-import { getPeaBurn } from "@/lib/burn";
-import { getPeaPrice } from "@/lib/pea-price";
-
-const PEA_CA = process.env.NEXT_PUBLIC_PEA_TOKEN || "0xd046a0B73dBE5b4E00F507526C35E5426C873f99";
+import { getLeaderboard, deriveMarketStats, getTrending, isLive } from "@/lib/fomo-api";
 import { fmtUsd, fmtNum, fmtPct } from "@/lib/format";
 import type { LeaderboardWindow } from "@/lib/types";
 
@@ -28,13 +24,10 @@ export default async function DashboardPage({
     ? searchParams.window
     : "24h") as LeaderboardWindow;
 
-  const [traders, trending, peaMarket, peaBurn, peaPrice] = await Promise.all([
-    getLeaderboard(window, 50),
-    getTrending(10),
-    getTokenMarket(PEA_CA),
-    getPeaBurn().catch(() => ({ burned: null as number | null, supply: null as number | null })),
-    getPeaPrice().catch(() => ({ priceUsd: null, marketCap: null, priceEth: null, ethUsd: null })),
-  ]);
+  // Only the board data blocks render. The $PEA price / market cap / burn are
+  // fetched client-side by their components (they poll), so they never slow the
+  // first paint.
+  const [traders, trending] = await Promise.all([getLeaderboard(window, 50), getTrending(10)]);
   const stats = deriveMarketStats(traders, window);
   const topPnl = traders.slice(0, 10).map((t) => ({ handle: t.handle, pnlUsd: t.pnlUsd }));
 
@@ -46,7 +39,7 @@ export default async function DashboardPage({
         <section className="rise shine card relative overflow-hidden p-6 sm:p-9">
           <div
             className="kenburns pointer-events-none absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: "url(/pea-cover.png)" }}
+            style={{ backgroundImage: "url(/pea-cover.jpg)" }}
           />
           {/* Legibility scrim: solid at the text (left), fading to reveal the art (right). */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-surface via-surface/85 to-surface/20" />
@@ -82,14 +75,11 @@ export default async function DashboardPage({
           </div>
         </section>
 
-        {/* Official $PEA token, real-time from the explorer + fomo board price */}
-        <PeaToken
-          fallbackPrice={peaPrice.priceUsd ?? peaMarket.priceUsd}
-          fallbackMarketCap={peaPrice.marketCap ?? peaMarket.marketCapUsd}
-        />
+        {/* Official $PEA token, price/market cap fetched client-side (live) */}
+        <PeaToken />
 
-        {/* Live buyback & burn tracker */}
-        <BurnTracker initialBurned={peaBurn.burned} initialSupply={peaBurn.supply} initialPrice={peaPrice.priceUsd} />
+        {/* Live buyback & burn tracker (client-side, live) */}
+        <BurnTracker />
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[
