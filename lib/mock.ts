@@ -12,17 +12,14 @@ import type {
   SocialTrader,
 } from "./types";
 
-const CHAINS = ["robinhood", "solana", "base", "bsc", "ethereum"];
-const TOKENS = ["PONS", "PEPE", "WIF", "BONK", "POPCAT", "MOG", "TURBO", "DEGEN"];
+// Robinhood Chain only.
+const CHAINS = ["robinhood"];
+const TOKENS = ["PONS", "PORK", "CACHE", "HOOD", "GOLD", "ROBIN", "APEX", "NEST"];
 const HANDLES = ["CryptoKaleo", "frankdegods", "ansem", "theveeman", "cosekant", "pumpqueen", "gmfrog", "alphachad"];
 
 const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 
-function solAddr(): string {
-  const c = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789";
-  return Array.from({ length: 44 }, () => pick(c.split(""))).join("");
-}
 function evmAddr(): string {
   const h = "0123456789abcdef";
   return "0x" + Array.from({ length: 40 }, () => pick(h.split(""))).join("");
@@ -40,7 +37,7 @@ export function mockLeaderboard(window: LeaderboardWindow, limit = 30): Trader[]
       trades: Math.floor(rand(20, 400) * scale),
       followers: Math.floor(rand(120, 42_000)),
       holdings: Math.floor(rand(1, 18)),
-      wallets: { solana: solAddr(), evm: evmAddr() },
+      wallets: { evm: evmAddr() },
       topTokens: [evmAddr().slice(0, 8), evmAddr().slice(0, 8)],
       verified: Math.random() > 0.5,
     }))
@@ -64,7 +61,7 @@ export function mockTrending(limit = 10): BoardToken[] {
     rank: i + 1,
     name: `${TOKENS[i % TOKENS.length]} Token`,
     symbol: TOKENS[i % TOKENS.length],
-    address: Math.random() > 0.5 ? solAddr() : evmAddr(),
+    address: evmAddr(),
     network: pick(CHAINS),
     holders: Math.floor(rand(200, 60_000)),
     priceUsd: rand(0.0000001, 3),
@@ -91,7 +88,7 @@ export function mockAlerts(limit = 40): Alert[] {
       source: Math.random() > 0.8 ? "push" : "feed",
       trader,
       token,
-      tokenAddress: Math.random() > 0.5 ? solAddr() : evmAddr(),
+      tokenAddress: evmAddr(),
       chain: pick(CHAINS),
       usdValue: usd,
       text:
@@ -124,7 +121,7 @@ function mockWindow(mult: number): TokenWindow {
 
 export function mockTokenIntel(query: string): TokenIntel {
   const symbol = (query || pick(TOKENS)).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "PONS";
-  const address = Math.random() > 0.5 ? solAddr() : evmAddr();
+  const address = evmAddr();
   return {
     query,
     found: true,
@@ -153,7 +150,7 @@ export function mockTokenIntel(query: string): TokenIntel {
       const cost = rand(2_000, 90_000);
       return {
         handle: pick(HANDLES),
-        wallet: { solana: solAddr() },
+        wallet: { evm: evmAddr() },
         isDev: true,
         amount: rand(10_000, 9_000_000),
         valueUsd: rand(1_000, 120_000),
@@ -192,7 +189,7 @@ export function mockTraderProfile(handle: string): TraderProfile {
     followers: Math.floor(rand(200, 42_000)),
     following: Math.floor(rand(20, 400)),
     holdings: Math.floor(rand(2, 16)),
-    wallets: { solana: solAddr(), evm: evmAddr() },
+    wallets: { evm: evmAddr() },
     description: "Trader on fomo. Momentum and memecoins.",
     accountAgeDays: Math.floor(rand(30, 400)),
     averageHoldTimeSeconds: Math.floor(rand(600, 120_000)),
@@ -211,7 +208,7 @@ export function mockUserTrades(handle: string, n = 20): UserTrade[] {
     return {
       tradeId: `tr_${now}_${i}`,
       tokenSymbol: pick(TOKENS),
-      tokenAddress: Math.random() > 0.5 ? solAddr() : evmAddr(),
+      tokenAddress: evmAddr(),
       status: open ? "open" : "closed",
       amount,
       avgEntryPrice: entry,
@@ -225,13 +222,13 @@ export function mockUserTrades(handle: string, n = 20): UserTrade[] {
 }
 
 export function mockPortfolio(handle: string): Portfolio {
-  const chains = ["robinhood", "solana", "base", "bsc", "ethereum"];
+  const chains = ["robinhood"];
   const holdings = Array.from({ length: 7 }).map(() => {
     const priceUsd = rand(0.0000001, 3);
     const amount = rand(1_000, 6_000_000);
     return {
       tokenSymbol: pick(TOKENS),
-      tokenAddress: Math.random() > 0.5 ? solAddr() : evmAddr(),
+      tokenAddress: evmAddr(),
       chain: pick(chains),
       amount,
       priceUsd,

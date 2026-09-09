@@ -56,11 +56,7 @@ export default async function LeaderboardPage({
                       {t.verified && <Verified className="text-brand-bright" />}
                     </div>
                     <div className="font-mono text-xs text-muted">
-                      {t.wallets.solana
-                        ? `${t.wallets.solana.slice(0, 4)}…${t.wallets.solana.slice(-4)}`
-                        : t.wallets.evm
-                          ? `${t.wallets.evm.slice(0, 6)}…${t.wallets.evm.slice(-4)}`
-                          : ""}
+                      {t.wallets.evm ? `${t.wallets.evm.slice(0, 6)}…${t.wallets.evm.slice(-4)}` : ""}
                     </div>
                   </td>
                   <td className={`px-5 py-4 text-right font-semibold tabular-nums ${t.pnlUsd >= 0 ? "text-up" : "text-down"}`}>

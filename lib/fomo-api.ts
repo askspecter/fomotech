@@ -38,14 +38,22 @@ const API_KEY = process.env.FOMO_API_KEY ?? "";
 
 export const isLive = DATA_SOURCE === "live";
 
-/** Friendly chain name -> fomo networkId (needed for tokens outside the directory). */
+// This app is Robinhood Chain only. Everything token-facing (feed, trending,
+// token intel, portfolios) is filtered to this single chain.
+export const ROBINHOOD_CHAIN = "robinhood";
+export const ROBINHOOD_NETWORK_ID = 4663;
+
+/** True when a chain name or id refers to Robinhood Chain. */
+export function isRobinhood(chain?: string | number | null): boolean {
+  if (chain == null) return false;
+  if (typeof chain === "number") return chain === ROBINHOOD_NETWORK_ID;
+  const c = chain.toLowerCase();
+  return c === "robinhood" || c === "rh" || c === "hood" || c === String(ROBINHOOD_NETWORK_ID);
+}
+
+/** Friendly chain name -> fomo networkId. Robinhood Chain only. */
 export const NETWORK_IDS: Record<string, number> = {
-  robinhood: 4663,
-  solana: 1399811149,
-  ethereum: 1,
-  eth: 1,
-  base: 8453,
-  bsc: 56,
+  robinhood: ROBINHOOD_NETWORK_ID,
 };
 
 async function fomoFetch<T>(path: string, revalidate = 30): Promise<T> {
@@ -110,28 +118,32 @@ export async function getTrending(limit = 10): Promise<BoardToken[]> {
     `/v2/leaderboard/tokens/trending?limit=${limit}`,
   );
   if (data.available === false || !data.tokens) return [];
-  return data.tokens.map((t, i) => ({
-    rank: t.rank ?? i + 1,
-    image: t.image,
-    name: t.token?.name ?? t.name ?? t.token?.symbol ?? "",
-    symbol: t.token?.symbol ?? t.symbol ?? "",
-    address: t.token?.address ?? t.address ?? "",
-    network: t.network ?? "",
-    holders: Number(t.holders ?? 0),
-    priceUsd: Number(t.priceUsd ?? 0),
-    change24h: Number(t.change24h ?? 0),
-    marketCapUsd: Number(t.marketCapUsd ?? 0),
-    volume24hUsd: Number(t.volume24hUsd ?? 0),
-    fomoBuyers: Number(t.fomoBuyers ?? 0),
-  }));
+  return data.tokens
+    .filter((t: any) => isRobinhood(t.network))
+    .map((t: any, i: number) => ({
+      rank: t.rank ?? i + 1,
+      image: t.image,
+      name: t.token?.name ?? t.name ?? t.token?.symbol ?? "",
+      symbol: t.token?.symbol ?? t.symbol ?? "",
+      address: t.token?.address ?? t.address ?? "",
+      network: t.network ?? ROBINHOOD_CHAIN,
+      holders: Number(t.holders ?? 0),
+      priceUsd: Number(t.priceUsd ?? 0),
+      change24h: Number(t.change24h ?? 0),
+      marketCapUsd: Number(t.marketCapUsd ?? 0),
+      volume24hUsd: Number(t.volume24hUsd ?? 0),
+      fomoBuyers: Number(t.fomoBuyers ?? 0),
+    }));
 }
 
 // --- Alerts (live feed) ---------------------------------------------------
 
 export async function getAlerts(limit = 40): Promise<Alert[]> {
   if (!isLive) return mockAlerts(limit);
-  const data = await fomoFetch<any>(`/v2/alerts?limit=${limit}`, 0);
-  const items: any[] = Array.isArray(data) ? data : (data.alerts ?? data.items ?? []);
+  // Robinhood Chain only: ask the API for this chain, and filter defensively.
+  const data = await fomoFetch<any>(`/v2/alerts?limit=${limit}&chain=${ROBINHOOD_CHAIN}`, 0);
+  const raw: any[] = Array.isArray(data) ? data : (data.alerts ?? data.items ?? []);
+  const items = raw.filter((a) => a.chain == null || isRobinhood(a.chain ?? a.chainId));
   return items.map((a, i) => ({
     id: String(a.id ?? `${a.ts ?? Date.now()}_${i}`),
     alertType: a.alertType ?? a.type ?? "trade",
@@ -182,7 +194,8 @@ export async function getTokenIntel(query: string, networkId?: number): Promise<
     address = meta.address;
   }
 
-  const net = networkId ? `?networkId=${networkId}` : "";
+  // Robinhood Chain only: always read token stats against network 4663.
+  const net = `?networkId=${networkId ?? ROBINHOOD_NETWORK_ID}`;
 
   const [statsR, holdersR, devsR] = await Promise.allSettled([
     fomoFetch<any>(`/v2/token/${address}/stats${net}`, 15),
@@ -296,20 +309,24 @@ export async function getUserTrades(handle: string, limit = 25): Promise<UserTra
 export async function getUserBalances(handle: string): Promise<Portfolio> {
   const h = stripAt(handle);
   if (!isLive) return mockPortfolio(h);
-  const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/balances`, 15);
+  // Robinhood Chain only: narrow to this chain, and filter defensively.
+  const data = await fomoFetch<any>(`/v2/users/${encodeURIComponent(h)}/balances?chain=${ROBINHOOD_CHAIN}`, 15);
   const raw: any[] = data.holdings ?? [];
-  const holdings = raw.map((b) => ({
-    tokenSymbol: b.token?.symbol ?? b.tokenSymbol ?? "",
-    tokenAddress: b.token?.address ?? b.tokenAddress,
-    chain: b.chain ?? "",
-    amount: Number(b.amount ?? 0),
-    priceUsd: Number(b.priceUsd ?? 0),
-    valueUsd: Number(b.valueUsd ?? 0),
-    change24h: Number(b.change24h ?? 0),
-  }));
+  const holdings = raw
+    .filter((b) => b.chain == null || isRobinhood(b.chain ?? b.token?.networkId))
+    .map((b) => ({
+      tokenSymbol: b.token?.symbol ?? b.tokenSymbol ?? "",
+      tokenAddress: b.token?.address ?? b.tokenAddress,
+      chain: ROBINHOOD_CHAIN,
+      amount: Number(b.amount ?? 0),
+      priceUsd: Number(b.priceUsd ?? 0),
+      valueUsd: Number(b.valueUsd ?? 0),
+      change24h: Number(b.change24h ?? 0),
+    }));
+  const rh = (data.byChain && (data.byChain.robinhood ?? data.byChain[ROBINHOOD_NETWORK_ID])) || undefined;
   return {
-    totalValueUsd: Number(data.totalValueUsd ?? holdings.reduce((s, h) => s + h.valueUsd, 0)),
-    byChain: data.byChain ?? {},
+    totalValueUsd: rh?.valueUsd ?? holdings.reduce((s, h) => s + h.valueUsd, 0),
+    byChain: rh ? { robinhood: rh } : {},
     holdings: holdings.sort((a, b) => b.valueUsd - a.valueUsd),
   };
 }

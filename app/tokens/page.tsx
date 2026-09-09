@@ -5,12 +5,10 @@ import Topbar from "@/components/Topbar";
 import type { TokenIntel, TokenWindow } from "@/lib/types";
 import { fmtUsd, fmtNum } from "@/lib/format";
 
-const CHAINS = ["auto", "robinhood", "solana", "base", "bsc", "eth"];
 const WINDOW_KEYS: ("5m" | "1h" | "4h" | "24h")[] = ["5m", "1h", "4h", "24h"];
 
 export default function TokensPage() {
   const [q, setQ] = useState("");
-  const [chain, setChain] = useState("auto");
   const [loading, setLoading] = useState(false);
   const [intel, setIntel] = useState<TokenIntel | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +19,8 @@ export default function TokensPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ q });
-      if (chain !== "auto") params.set("chain", chain);
+      // Robinhood Chain only: the route defaults token stats to network 4663.
+      const params = new URLSearchParams({ q, chain: "robinhood" });
       const res = await fetch(`/api/tokens?${params}`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Scan failed");
@@ -37,32 +35,17 @@ export default function TokensPage() {
 
   return (
     <>
-      <Topbar title="Token Intel" subtitle="Smart-money holders, flow, and dev signals" />
+      <Topbar title="Token Intel" subtitle="Robinhood Chain tokens: holders, flow, and dev signals" />
       <div className="p-5">
         <form onSubmit={scan} className="mb-6 flex flex-wrap gap-2">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Token symbol or contract address…"
-            className="min-w-[220px] flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-brand"
+            placeholder="Token symbol or contract address"
+            className="inp min-w-[220px] flex-1"
           />
-          <select
-            value={chain}
-            onChange={(e) => setChain(e.target.value)}
-            className="rounded-xl border border-border bg-surface px-3 py-3 text-sm capitalize outline-none focus:border-brand"
-          >
-            {CHAINS.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand-bright disabled:opacity-50"
-          >
-            {loading ? "Scanning…" : "Scan"}
+          <button type="submit" disabled={loading} className="btn-brand px-6 py-3 text-sm">
+            {loading ? "Scanning" : "Scan"}
           </button>
         </form>
 

@@ -4,6 +4,10 @@ A web platform that plugs into the [fomo](https://fomoapi.io) social crypto
 trading ecosystem. Built as a modular dashboard so you can grow it beyond a
 single page.
 
+**Robinhood Chain only.** Every token, feed event, portfolio holding, and token
+scan is filtered to Robinhood Chain (network id 4663); assets on other chains are
+never shown. The filter lives in `lib/fomo-api.ts` (`isRobinhood`).
+
 ## Modules
 
 | Route          | Module          | Data source                                                      |

@@ -24,9 +24,11 @@ export default function Topbar({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span
-            className={`chip ${isLive ? "border-up/40 bg-up/10 text-up" : "text-muted"}`}
-          >
+          <span className="chip hidden text-brand-bright sm:inline-flex">
+            <span className="h-2 w-2 rounded-full bg-brand shadow-[0_0_8px] shadow-brand" />
+            Robinhood Chain
+          </span>
+          <span className={`chip ${isLive ? "border-up/40 bg-up/10 text-up" : "text-muted"}`}>
             <span className={`h-2 w-2 rounded-full ${isLive ? "bg-up shadow-[0_0_8px] shadow-up" : "bg-muted-2"}`} />
             <span className="hidden sm:inline">{isLive ? "Live API" : "Sample data"}</span>
           </span>

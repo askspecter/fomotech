@@ -61,7 +61,6 @@ export default async function DashboardPage({
                   <tr className="text-left text-xs uppercase tracking-wide text-muted">
                     <th className="pb-3 font-medium">#</th>
                     <th className="pb-3 font-medium">Token</th>
-                    <th className="pb-3 font-medium">Chain</th>
                     <th className="pb-3 text-right font-medium">Price</th>
                     <th className="pb-3 text-right font-medium">24h</th>
                     <th className="hidden pb-3 text-right font-medium sm:table-cell">Mkt cap</th>
@@ -76,7 +75,6 @@ export default async function DashboardPage({
                         <div className="font-semibold">{t.symbol}</div>
                         <div className="text-xs text-muted">{t.name}</div>
                       </td>
-                      <td className="py-3 capitalize text-muted">{t.network}</td>
                       <td className="py-3 text-right tabular-nums">{fmtUsd(t.priceUsd)}</td>
                       <td className={`py-3 text-right font-medium tabular-nums ${t.change24h >= 0 ? "text-up" : "text-down"}`}>
                         {fmtPct(t.change24h)}

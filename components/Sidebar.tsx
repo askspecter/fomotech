@@ -79,8 +79,11 @@ export default function Sidebar() {
         })}
       </nav>
       <div className="mt-auto rounded-xl2 border border-border bg-brand-soft p-4 text-xs text-muted">
-        <div className="mb-1 font-display font-semibold text-white">Never miss a move</div>
-        Realtime signals from the fomo ecosystem.
+        <div className="mb-1 flex items-center gap-1.5 font-display font-semibold text-white">
+          <span className="h-2 w-2 rounded-full bg-brand shadow-[0_0_8px] shadow-brand" />
+          Robinhood Chain
+        </div>
+        Every token and signal on this app is Robinhood Chain only.
       </div>
     </aside>
   );
