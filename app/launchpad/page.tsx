@@ -113,7 +113,7 @@ export default function LaunchpadPage() {
       <div className="grid gap-5 p-5 lg:grid-cols-[1fr_360px]">
         {/* Left: pick profile + edit */}
         <div className="space-y-5">
-          <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="card p-5">
             <h2 className="mb-1 font-semibold">1. Pick a fomo profile</h2>
             <p className="mb-3 text-sm text-muted">
               Load a trader from fomo and turn their profile into a token, seeded with their name and avatar.
@@ -155,7 +155,7 @@ export default function LaunchpadPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="card p-5">
             <h2 className="mb-3 font-semibold">2. Token details</h2>
             <div className="space-y-3">
               <Field label="Name">
@@ -183,7 +183,7 @@ export default function LaunchpadPage() {
 
         {/* Right: launch config + deploy */}
         <div className="space-y-5">
-          <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="card p-5">
             <h2 className="mb-3 font-semibold">3. Launch settings</h2>
             <div className="space-y-3">
               <Field label="Quote asset">
@@ -257,7 +257,7 @@ export default function LaunchpadPage() {
             </dl>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="card p-5">
             <h2 className="mb-3 font-semibold">4. Deploy</h2>
             <DeployButton input={input} disabled={!ready} />
             <p className="mt-3 text-xs text-muted">
@@ -266,8 +266,6 @@ export default function LaunchpadPage() {
           </div>
         </div>
       </div>
-
-      <style>{`.inp{width:100%;border-radius:0.75rem;border:1px solid #262a36;background:#1b1e27;padding:0.6rem 0.9rem;font-size:0.875rem;outline:none}.inp:focus{border-color:#6c5ce7}`}</style>
     </>
   );
 }

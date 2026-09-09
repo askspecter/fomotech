@@ -147,7 +147,7 @@ function WatchBox({
   onRemove: (v: string) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-4">
+    <div className="card p-4">
       <h3 className="mb-2 text-sm font-semibold">{title}</h3>
       <form
         onSubmit={(e) => {

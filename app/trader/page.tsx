@@ -82,7 +82,7 @@ export default function TraderPage() {
         {error && <div className="rounded-xl border border-down/40 bg-down/10 p-4 text-sm text-down">{error}</div>}
 
         {p && !p.found && (
-          <div className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">
+          <div className="card p-8 text-center text-muted">
             No trader found for that handle.
           </div>
         )}
@@ -90,7 +90,7 @@ export default function TraderPage() {
         {p && p.found && (
           <div className="space-y-4">
             {/* Profile header */}
-            <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-border bg-surface p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4 card p-5">
               <div className="flex items-center gap-4">
                 {p.profilePictureLink ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -137,7 +137,7 @@ export default function TraderPage() {
 
             <div className="grid gap-4 lg:grid-cols-2">
               {/* Portfolio */}
-              <div className="rounded-2xl border border-border bg-surface p-5">
+              <div className="card p-5">
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="font-semibold">Portfolio</h3>
                   {data?.portfolio && (
@@ -164,7 +164,7 @@ export default function TraderPage() {
               </div>
 
               {/* Recent trades */}
-              <div className="rounded-2xl border border-border bg-surface p-5">
+              <div className="card p-5">
                 <h3 className="mb-3 font-semibold">Recent trades</h3>
                 {!data?.trades || data.trades.length === 0 ? (
                   <p className="py-4 text-sm text-muted">No trades available.</p>
@@ -196,7 +196,7 @@ export default function TraderPage() {
             </div>
 
             {/* Following (discovery) */}
-            <div className="rounded-2xl border border-border bg-surface p-5">
+            <div className="card p-5">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Who they follow</h3>
                 {following === null && (
@@ -266,7 +266,7 @@ export default function TraderPage() {
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "up" | "down" }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
+    <div className="card p-5">
       <div className="text-sm text-muted">{label}</div>
       <div className={`mt-1 text-xl font-bold tabular-nums ${tone === "up" ? "text-up" : tone === "down" ? "text-down" : ""}`}>
         {value}

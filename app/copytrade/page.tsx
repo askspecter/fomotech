@@ -82,7 +82,7 @@ export default function CopytradePage() {
             {loading && <p className="text-sm text-muted">Loading performance</p>}
 
             {matched.length > 0 && (
-              <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+              <div className="card overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wide text-muted">
@@ -122,7 +122,7 @@ export default function CopytradePage() {
             )}
 
             {misses.length > 0 && (
-              <div className="rounded-2xl border border-border bg-surface p-5">
+              <div className="card p-5">
                 <h3 className="mb-2 text-sm font-semibold">Not in the 24h top 150</h3>
                 <p className="mb-3 text-xs text-muted">
                   These copied traders are outside today top board, so live stats are not shown here. Open the explorer for their full profile.
@@ -148,7 +148,7 @@ export default function CopytradePage() {
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "up" | "down" }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
+    <div className="card p-5">
       <div className="text-sm text-muted">{label}</div>
       <div className={`mt-1 text-xl font-bold tabular-nums ${tone === "up" ? "text-up" : tone === "down" ? "text-down" : ""}`}>
         {value}

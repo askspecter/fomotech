@@ -34,20 +34,24 @@ export default async function DashboardPage({
           <WindowTabs active={window} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard label={`Volume (${window})`} value={fmtUsd(stats.totalVolumeUsd, { compact: true })} />
-          <StatCard label={`Net PnL (${window})`} value={fmtUsd(stats.totalPnlUsd, { compact: true })} />
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <StatCard accent label={`Volume (${window})`} value={fmtUsd(stats.totalVolumeUsd, { compact: true })} />
+          <StatCard
+            label={`Net PnL (${window})`}
+            value={fmtUsd(stats.totalPnlUsd, { compact: true })}
+            tone={stats.totalPnlUsd >= 0 ? "up" : "down"}
+          />
           <StatCard label="Traders" value={fmtNum(stats.activeTraders)} />
           <StatCard label={`Trades (${window})`} value={fmtNum(stats.totalTrades)} />
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-5">
-          <h2 className="mb-4 font-semibold">Top traders by PnL · {window}</h2>
+        <div className="card p-5">
+          <h2 className="mb-4 text-base font-semibold">Top traders by PnL</h2>
           <PnlBarChart data={topPnl} />
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-5">
-          <h2 className="mb-4 font-semibold">Trending tokens on fomo</h2>
+        <div className="card p-5">
+          <h2 className="mb-4 text-base font-semibold">Trending tokens on fomo</h2>
           {trending.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted">Board not available right now.</p>
           ) : (

@@ -25,7 +25,7 @@ export default async function LeaderboardPage({
       <Topbar title="Leaderboard" subtitle="Top fomo traders by realized PnL" />
       <div className="space-y-4 p-5">
         <WindowTabs active={window} />
-        <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+        <div className="card overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-muted">

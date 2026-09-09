@@ -46,33 +46,40 @@ function Icon({ k }: { k: IconKey }) {
 export default function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="hidden md:flex md:w-60 shrink-0 flex-col border-r border-border bg-surface/60 p-4">
-      <div className="mb-8 flex items-center gap-2 px-2">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-lg font-black text-white">f</span>
+    <aside className="hidden md:flex md:w-64 shrink-0 flex-col border-r border-border-soft bg-surface/40 p-4">
+      <div className="mb-8 flex items-center gap-2.5 px-2 pt-1">
+        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand font-display text-xl font-black text-white shadow-glow">
+          f
+        </span>
         <div className="leading-tight">
-          <div className="font-bold tracking-tight">fomotech</div>
-          <div className="text-[11px] text-muted">fomo companion</div>
+          <div className="font-display text-[15px] font-bold tracking-tight">fomotech</div>
+          <div className="text-[11px] text-muted-2">fomo companion</div>
         </div>
       </div>
-      <nav className="flex flex-col gap-1">
+      <nav className="flex flex-col gap-0.5">
         {NAV.map((item) => {
           const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                active ? "bg-brand/15 text-white" : "text-muted hover:bg-surface-2 hover:text-white"
+              className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                active
+                  ? "bg-brand/12 text-white"
+                  : "text-muted hover:bg-surface-2/70 hover:text-white"
               }`}
             >
-              <Icon k={item.icon} />
+              {active && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand" />}
+              <span className={active ? "text-brand-bright" : "text-muted-2 group-hover:text-muted"}>
+                <Icon k={item.icon} />
+              </span>
               {item.label}
             </Link>
           );
         })}
       </nav>
-      <div className="mt-auto rounded-xl border border-border bg-surface-2 p-3 text-xs text-muted">
-        <div className="mb-1 font-semibold text-white">Never miss a move</div>
+      <div className="mt-auto rounded-xl2 border border-border bg-brand-soft p-4 text-xs text-muted">
+        <div className="mb-1 font-display font-semibold text-white">Never miss a move</div>
         Realtime signals from the fomo ecosystem.
       </div>
     </aside>

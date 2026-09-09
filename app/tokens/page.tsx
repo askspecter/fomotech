@@ -71,7 +71,7 @@ export default function TokensPage() {
         )}
 
         {intel && !intel.found && (
-          <div className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">
+          <div className="card p-8 text-center text-muted">
             No token found for “{intel.query}”.
           </div>
         )}
@@ -79,7 +79,7 @@ export default function TokensPage() {
         {intel && intel.found && (
           <div className="space-y-4">
             {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 card p-5">
               <div>
                 <div className="text-xl font-bold">{intel.meta?.symbol ?? intel.query}</div>
                 <div className="text-sm text-muted">{intel.meta?.name}</div>
@@ -117,7 +117,7 @@ export default function TokensPage() {
 
             {/* Flow windows */}
             {intel.stats && (
-              <div className="rounded-2xl border border-border bg-surface p-5">
+              <div className="card p-5">
                 <h3 className="mb-4 font-semibold">Flow</h3>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {WINDOW_KEYS.map((k) => {
@@ -147,7 +147,7 @@ export default function TokensPage() {
 
             <div className="grid gap-4 lg:grid-cols-2">
               {/* Smart-money holders */}
-              <div className="rounded-2xl border border-border bg-surface p-5">
+              <div className="card p-5">
                 <h3 className="mb-3 font-semibold">Smart-money holders</h3>
                 {intel.holders.length === 0 ? (
                   <p className="py-4 text-sm text-muted">No tracked holders.</p>
@@ -164,7 +164,7 @@ export default function TokensPage() {
               </div>
 
               {/* Devs / rug signal */}
-              <div className="rounded-2xl border border-border bg-surface p-5">
+              <div className="card p-5">
                 <h3 className="mb-1 font-semibold">Dev positions</h3>
                 <p className="mb-3 text-xs text-muted">
                   Empty means fomo knows of no dev holding, not a clean bill of health.
