@@ -2,8 +2,8 @@ import { createPublicClient, http, formatUnits, type Address } from "viem";
 import { robinhoodChain } from "./chain";
 import { PEA_TOKEN } from "./burn";
 
-// PEA's PONS v2 bonding curve (quote = native ETH). Override via env if it
-// migrates or graduates to a pool.
+// PEA's PONS v2 bonding curve (used only before graduation). After graduation
+// the live market is a DEX pool, read from DexScreener below.
 const CURVE = (process.env.NEXT_PUBLIC_PEA_CURVE ||
   "0x576bd13cc4053Eb91D284302a348769D91a7f068") as Address;
 
@@ -20,11 +20,75 @@ const ERC20 = [
 export interface PeaPrice {
   priceUsd: number | null;
   marketCap: number | null;
-  priceEth: number | null;
-  ethUsd: number | null;
+  change24h: number | null;
+  volume24h: number | null;
+  liquidityUsd: number | null;
+  source: "dex" | "curve" | null;
 }
 
-/** Live ETH/USD from CoinGecko (keyless), cached 60s by the fetch layer. */
+const EMPTY: PeaPrice = {
+  priceUsd: null,
+  marketCap: null,
+  change24h: null,
+  volume24h: null,
+  liquidityUsd: null,
+  source: null,
+};
+
+/** Live market from the graduated DEX pool via DexScreener (keyless). Picks the
+ *  deepest-liquidity pair for the token. */
+async function fromDex(): Promise<PeaPrice | null> {
+  try {
+    const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${PEA_TOKEN}`, {
+      next: { revalidate: 20 },
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const pairs: any[] = (j?.pairs ?? []).filter(
+      (p: any) => (p?.baseToken?.address ?? "").toLowerCase() === PEA_TOKEN.toLowerCase(),
+    );
+    if (!pairs.length) return null;
+    pairs.sort((a, b) => Number(b?.liquidity?.usd ?? 0) - Number(a?.liquidity?.usd ?? 0));
+    const p = pairs[0];
+    const priceUsd = Number(p?.priceUsd);
+    if (!(priceUsd > 0)) return null;
+    return {
+      priceUsd,
+      marketCap: Number(p?.marketCap ?? p?.fdv) || null,
+      change24h: typeof p?.priceChange?.h24 === "number" ? p.priceChange.h24 : null,
+      volume24h: Number(p?.volume?.h24) || null,
+      liquidityUsd: Number(p?.liquidity?.usd) || null,
+      source: "dex",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Fallback: marginal price from the PONS bonding curve (pre-graduation only). */
+async function fromCurve(): Promise<PeaPrice | null> {
+  try {
+    const client = createPublicClient({ chain: robinhoodChain, transport: http() });
+    const [q, t, dec, sup] = await Promise.all([
+      client.readContract({ address: CURVE, abi: CURVE_ABI, functionName: "quoteReserve" }),
+      client.readContract({ address: CURVE, abi: CURVE_ABI, functionName: "tokenReserve" }),
+      client.readContract({ address: PEA_TOKEN, abi: ERC20, functionName: "decimals" }),
+      client.readContract({ address: PEA_TOKEN, abi: ERC20, functionName: "totalSupply" }),
+    ]);
+    const d = Number(dec) || 18;
+    const token = Number(formatUnits(t as bigint, d));
+    if (!(token > 0)) return null; // graduated / empty curve
+    const quote = Number(formatUnits(q as bigint, 18));
+    const ethUsd = await getEthUsd();
+    const priceUsd = (quote / token) * ethUsd;
+    if (!(priceUsd > 0)) return null;
+    const supply = Number(formatUnits(sup as bigint, d));
+    return { priceUsd, marketCap: priceUsd * supply, change24h: null, volume24h: null, liquidityUsd: null, source: "curve" };
+  } catch {
+    return null;
+  }
+}
+
 async function getEthUsd(): Promise<number> {
   try {
     const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd", {
@@ -38,35 +102,7 @@ async function getEthUsd(): Promise<number> {
   }
 }
 
-/**
- * $PEA price straight from the PONS bonding curve: the marginal price is the
- * quote reserve over the token reserve (both virtual), quoted in ETH, then
- * converted to USD. Read on-chain via RPC so it never depends on an indexer.
- */
+/** Live $PEA market: DEX pool first (post-graduation), bonding curve as fallback. */
 export async function getPeaPrice(): Promise<PeaPrice> {
-  try {
-    const client = createPublicClient({ chain: robinhoodChain, transport: http() });
-    const [q, t, dec, sup, ethUsd] = await Promise.all([
-      client.readContract({ address: CURVE, abi: CURVE_ABI, functionName: "quoteReserve" }),
-      client.readContract({ address: CURVE, abi: CURVE_ABI, functionName: "tokenReserve" }),
-      client.readContract({ address: PEA_TOKEN, abi: ERC20, functionName: "decimals" }),
-      client.readContract({ address: PEA_TOKEN, abi: ERC20, functionName: "totalSupply" }),
-      getEthUsd(),
-    ]);
-    const d = Number(dec) || 18;
-    const quote = Number(formatUnits(q as bigint, 18)); // ETH, 18 decimals
-    const token = Number(formatUnits(t as bigint, d));
-    const priceEth = token > 0 ? quote / token : 0;
-    const priceUsd = priceEth * ethUsd;
-    const supply = Number(formatUnits(sup as bigint, d));
-    const marketCap = priceUsd * supply;
-    return {
-      priceUsd: priceUsd > 0 ? priceUsd : null,
-      marketCap: marketCap > 0 ? marketCap : null,
-      priceEth: priceEth > 0 ? priceEth : null,
-      ethUsd: ethUsd > 0 ? ethUsd : null,
-    };
-  } catch {
-    return { priceUsd: null, marketCap: null, priceEth: null, ethUsd: null };
-  }
+  return (await fromDex()) ?? (await fromCurve()) ?? EMPTY;
 }

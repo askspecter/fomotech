@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fmtNum } from "@/lib/format";
+import { fmtNum, fmtUsd } from "@/lib/format";
 
 const EXPLORER = (process.env.NEXT_PUBLIC_EXPLORER_URL || "https://robinhoodchain.blockscout.com").replace(
   /\/$/,
@@ -40,23 +40,34 @@ function useCountUp(target: number, ms = 1400) {
 export default function BurnTracker({
   initialBurned,
   initialSupply,
+  initialPrice,
 }: {
   initialBurned?: number | null;
   initialSupply?: number | null;
+  initialPrice?: number | null;
 }) {
   const [burned, setBurned] = useState<number | null>(initialBurned ?? null);
   const [supply, setSupply] = useState<number | null>(initialSupply ?? null);
+  const [price, setPrice] = useState<number | null>(initialPrice ?? null);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch("/api/burn", { cache: "no-store" });
-        if (!res.ok) return;
-        const j = await res.json();
-        if (!cancelled) {
-          if (typeof j.burned === "number") setBurned(j.burned);
-          if (typeof j.supply === "number") setSupply(j.supply);
+        const [burnRes, priceRes] = await Promise.all([
+          fetch("/api/burn", { cache: "no-store" }),
+          fetch("/api/pea-price", { cache: "no-store" }),
+        ]);
+        if (burnRes.ok) {
+          const j = await burnRes.json();
+          if (!cancelled) {
+            if (typeof j.burned === "number") setBurned(j.burned);
+            if (typeof j.supply === "number") setSupply(j.supply);
+          }
+        }
+        if (priceRes.ok) {
+          const p = await priceRes.json();
+          if (!cancelled && typeof p.priceUsd === "number") setPrice(p.priceUsd);
         }
       } catch {
         /* keep last value */
@@ -69,6 +80,8 @@ export default function BurnTracker({
       clearInterval(id);
     };
   }, []);
+
+  const burnedUsd = burned != null && price != null ? burned * price : null;
 
   const shown = useCountUp(burned ?? 0);
   const pct = supply && burned ? (burned / supply) * 100 : null;
@@ -92,6 +105,11 @@ export default function BurnTracker({
             </div>
             <div className="mt-1 font-display text-3xl font-black tabular-nums text-white sm:text-4xl">
               {burned == null ? "—" : fmtNum(Math.round(shown))} <span className="text-brand-bright">$PEA</span>
+              {burnedUsd != null && (
+                <span className="ml-2 align-middle text-base font-bold text-[#ff7a1a]">
+                  ≈ {fmtUsd(burnedUsd, { compact: true })}
+                </span>
+              )}
             </div>
             <div className="mt-1 text-xs text-muted">
               Bought back &amp; burned{pct != null ? ` · ${pct.toFixed(2)}% of supply` : ""} · gone forever

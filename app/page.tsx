@@ -89,7 +89,7 @@ export default async function DashboardPage({
         />
 
         {/* Live buyback & burn tracker */}
-        <BurnTracker initialBurned={peaBurn.burned} initialSupply={peaBurn.supply} />
+        <BurnTracker initialBurned={peaBurn.burned} initialSupply={peaBurn.supply} initialPrice={peaPrice.priceUsd} />
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[

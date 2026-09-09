@@ -35,7 +35,7 @@ export default function PeaToken({
   fallbackMarketCap?: number;
 }) {
   const [d, setD] = useState<PeaData | null>(null);
-  const [live, setLive] = useState<{ price?: number; marketCap?: number }>({});
+  const [live, setLive] = useState<{ price?: number; marketCap?: number; change?: number }>({});
   const [copied, setCopied] = useState(false);
 
   // Live $PEA price + market cap from the PONS bonding curve (server RPC).
@@ -50,6 +50,7 @@ export default function PeaToken({
           setLive({
             price: typeof j.priceUsd === "number" ? j.priceUsd : undefined,
             marketCap: typeof j.marketCap === "number" ? j.marketCap : undefined,
+            change: typeof j.change24h === "number" ? j.change24h : undefined,
           });
         }
       } catch {
@@ -148,6 +149,12 @@ export default function PeaToken({
             <div className="mt-1 font-display text-3xl font-black tabular-nums text-white">
               {price != null ? fmtUsd(price) : "—"}
             </div>
+            {live.change != null && (
+              <div className={`mt-0.5 text-xs font-semibold tabular-nums ${live.change >= 0 ? "text-up" : "text-down"}`}>
+                {live.change >= 0 ? "+" : ""}
+                {live.change.toFixed(2)}% <span className="font-normal text-muted-2">24h</span>
+              </div>
+            )}
           </div>
         </div>
 
