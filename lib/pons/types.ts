@@ -14,6 +14,12 @@ export interface LaunchInput {
   launchConfigId?: number;
   /** Enable protocol buybacks for this launch. */
   buybackEnabled?: boolean;
+  /**
+   * Where creator fees accrue. Defaults to the deployer when unset. The
+   * launchpad sets this to the fomo profile's own wallet so the token it
+   * launched pays its creator fees to that profile automatically.
+   */
+  creatorFeeRecipient?: `0x${string}`;
   /** Optional initial dev buy, in ETH. */
   initialBuyEth?: string;
   twitter?: string;

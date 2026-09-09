@@ -1,4 +1,4 @@
-import { parseEther, toHex, zeroAddress, type Address } from "viem";
+import { isAddress, parseEther, toHex, zeroAddress, type Address } from "viem";
 import { v2FactoryAbi, v2LaunchAndBuyAbi } from "./abisV2";
 import { PONS_V2, v2Factory } from "./registry";
 import { canLaunch, launchFee, previewLaunchEconomics } from "./readerV2";
@@ -39,6 +39,18 @@ export async function prepareV2Launch(input: LaunchInput, account: Address): Pro
 
   const salt = toHex(crypto.getRandomValues(new Uint8Array(32)));
 
+  // Creator fees go to the fomo profile's wallet when the launchpad provides a
+  // valid, non-zero address; otherwise they fall back to the deployer. The
+  // factory rejects the zero address, so we never pass it.
+  const requested = input.creatorFeeRecipient;
+  const useProfile = !!requested && isAddress(requested) && requested !== zeroAddress;
+  const creatorFeeRecipient = (useProfile ? requested : account) as Address;
+  if (useProfile) {
+    warnings.push(
+      `Creator fees will be paid to ${creatorFeeRecipient}, the fomo profile's wallet, not your deployer wallet.`,
+    );
+  }
+
   const params = {
     name: input.name,
     symbol: input.ticker,
@@ -51,7 +63,7 @@ export async function prepareV2Launch(input: LaunchInput, account: Address): Pro
       website: input.website?.trim() ?? "",
       farcaster: "",
     },
-    creatorFeeRecipient: account,
+    creatorFeeRecipient,
     creatorTaxBps: 0,
     buybackEnabled: input.buybackEnabled ?? true,
     expectedEconomics,
@@ -70,6 +82,9 @@ export async function prepareV2Launch(input: LaunchInput, account: Address): Pro
     warnings.push(
       "Atomic create plus buy: minTokensOut is 0 (accept any), since this first buy is front run proof by construction.",
     );
+    // params.creatorFeeRecipient is already resolved and non-zero (profile
+    // wallet or deployer), which launchAndBuy requires. The buy recipient stays
+    // the deployer so the first tokens land in the launcher's wallet.
     return {
       address: PONS_V2.launchAndBuy,
       abi: v2LaunchAndBuyAbi,

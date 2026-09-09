@@ -51,6 +51,8 @@ export default function LaunchpadPage() {
   const [configId, setConfigId] = useState("0");
   const [initialBuyEth, setInitialBuyEth] = useState("");
   const [buyback, setBuyback] = useState(true);
+  const [feeWallet, setFeeWallet] = useState<string>("");
+  const [routeFeesToProfile, setRouteFeesToProfile] = useState(true);
 
   const [options, setOptions] = useState<LaunchOptions | null>(null);
 
@@ -67,6 +69,8 @@ export default function LaunchpadPage() {
         setTicker(tickerFrom(profile.handle));
         setDescription(profile.description || `${profile.displayName} on fomo.`);
         setImageUri(profile.profilePictureLink || "");
+        setFeeWallet(profile.wallets?.evm || "");
+        setRouteFeesToProfile(Boolean(profile.wallets?.evm));
       }
     } finally {
       setLoadingProfile(false);
@@ -85,6 +89,8 @@ export default function LaunchpadPage() {
       .catch(() => {});
   }, [address]);
 
+  const feeToProfile = routeFeesToProfile && /^0x[0-9a-fA-F]{40}$/.test(feeWallet);
+
   const input: LaunchInput = {
     name: name.trim(),
     ticker: ticker.trim(),
@@ -93,6 +99,7 @@ export default function LaunchpadPage() {
     pairToken: pairToken as `0x${string}`,
     launchConfigId: Number(configId) || 0,
     buybackEnabled: buyback,
+    creatorFeeRecipient: feeToProfile ? (feeWallet as `0x${string}`) : undefined,
     initialBuyEth: initialBuyEth.trim() || undefined,
     twitter: profile?.handle,
   };
@@ -212,12 +219,39 @@ export default function LaunchpadPage() {
                 <input type="checkbox" checked={buyback} onChange={(e) => setBuyback(e.target.checked)} className="h-4 w-4 accent-brand" />
                 Enable protocol buybacks
               </label>
+
+              <div className="rounded-xl border border-border bg-surface-2 p-3">
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={routeFeesToProfile}
+                    disabled={!feeWallet}
+                    onChange={(e) => setRouteFeesToProfile(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-brand"
+                  />
+                  <span>
+                    Route creator fees to the fomo profile
+                    <span className="mt-0.5 block text-xs text-muted">
+                      {feeWallet
+                        ? feeToProfile
+                          ? `Fees accrue to ${feeWallet.slice(0, 6)}..${feeWallet.slice(-4)}, the profile wallet.`
+                          : "Off: fees accrue to your deployer wallet."
+                        : "Load a fomo profile with a wallet to enable this."}
+                    </span>
+                  </span>
+                </label>
+              </div>
             </div>
 
             <dl className="mt-4 space-y-1 border-t border-border pt-4 text-xs text-muted">
               <Row k="Model" v="Bonding curve, graduates to Uniswap V4" />
               <Row k="Graduation" v={`~${V2_GRADUATION_THRESHOLD_ETH} ETH (per config)`} />
               {feeEth && <Row k="Launch fee" v={`${feeEth} ETH`} />}
+              <Row
+                k="Creator fees"
+                v={feeToProfile ? `@${profile?.handle}` : "Your deployer wallet"}
+                tone={feeToProfile ? "up" : undefined}
+              />
               {options?.canLaunch === false && <Row k="Whitelist" v="This wallet is not allowlisted" tone="down" />}
               {options?.canLaunch === true && <Row k="Whitelist" v="This wallet can launch" tone="up" />}
             </dl>
