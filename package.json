@@ -1,8 +1,8 @@
 {
-  "name": "fomotech",
+  "name": "pea",
   "version": "0.1.0",
   "private": true,
-  "description": "fomo companion web platform — analytics dashboard, leaderboard, live feed, trader explorer, and token scanner for the fomo.family social trading ecosystem.",
+  "description": "PEA — fomo companion web platform: analytics dashboard, leaderboard, live feed, trader explorer, and token scanner for the fomo.family social trading ecosystem.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

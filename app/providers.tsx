@@ -17,8 +17,8 @@ import { robinhoodChain } from "@/lib/chain";
 // Robinhood, never Solana. The next.config webpack aliases stub the unused
 // Coinbase connectors, and styles.css is imported in layout.tsx.
 const wagmiConfig = getDefaultConfig({
-  appName: "fomotech",
-  projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "fomotech_missing_wc_project_id",
+  appName: "PEA",
+  projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "pea_missing_wc_project_id",
   chains: [robinhoodChain],
   transports: { [robinhoodChain.id]: http() },
   ssr: true,

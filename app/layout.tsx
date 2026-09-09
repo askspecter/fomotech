@@ -6,9 +6,9 @@ import MobileNav from "@/components/MobileNav";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "fomotech",
+  title: "PEA",
   description:
-    "Analytics, leaderboard, live feed, trader explorer, copytrade, and a PONS v2 launchpad for the fomo social trading ecosystem.",
+    "PEA — analytics, leaderboard, live feed, trader explorer, copytrade, and a PONS v2 launchpad for the fomo social trading ecosystem.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

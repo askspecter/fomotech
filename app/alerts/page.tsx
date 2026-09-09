@@ -10,8 +10,8 @@ const POLL_MS = Number(process.env.NEXT_PUBLIC_FEED_POLL_MS ?? 15000);
 const WHALE_USD = 25000;
 
 export default function AlertsPage() {
-  const traders = useLocalList("fomotech.watch.traders");
-  const tokens = useLocalList("fomotech.watch.tokens");
+  const traders = useLocalList("pea.watch.traders");
+  const tokens = useLocalList("pea.watch.tokens");
 
   const [hits, setHits] = useState<Alert[]>([]);
   const [whaleMoves, setWhaleMoves] = useState(true);

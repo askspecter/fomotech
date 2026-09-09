@@ -49,10 +49,10 @@ export default function Sidebar() {
     <aside className="hidden md:flex md:w-64 shrink-0 flex-col border-r border-border-soft bg-surface/40 p-4">
       <div className="mb-8 flex items-center gap-2.5 px-2 pt-1">
         <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand font-display text-xl font-black text-white shadow-glow">
-          f
+          P
         </span>
         <div className="leading-tight">
-          <div className="font-display text-[15px] font-bold tracking-tight">fomotech</div>
+          <div className="font-display text-[15px] font-bold tracking-tight">PEA</div>
           <div className="text-[11px] text-muted-2">fomo companion</div>
         </div>
       </div>

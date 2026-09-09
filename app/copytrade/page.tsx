@@ -9,7 +9,7 @@ import type { Trader } from "@/lib/types";
 import { fmtUsd, fmtNum } from "@/lib/format";
 
 export default function CopytradePage() {
-  const copy = useLocalList("fomotech.copytrade");
+  const copy = useLocalList("pea.copytrade");
   const [matched, setMatched] = useState<Trader[]>([]);
   const [misses, setMisses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);

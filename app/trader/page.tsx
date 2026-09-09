@@ -21,8 +21,8 @@ export default function TraderPage() {
   const [following, setFollowing] = useState<SocialTrader[] | null>(null);
   const [loadingFollowing, setLoadingFollowing] = useState(false);
 
-  const copy = useLocalList("fomotech.copytrade");
-  const watch = useLocalList("fomotech.watch.traders");
+  const copy = useLocalList("pea.copytrade");
+  const watch = useLocalList("pea.watch.traders");
 
   async function lookup(e: React.FormEvent) {
     e.preventDefault();

@@ -1,4 +1,4 @@
-# fomotech — fomo companion
+# PEA — fomo companion
 
 A web platform that plugs into the [fomo](https://fomoapi.io) social crypto
 trading ecosystem. Built as a modular dashboard so you can grow it beyond a
