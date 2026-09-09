@@ -7,30 +7,26 @@ const EXPLORER = (process.env.NEXT_PUBLIC_EXPLORER_URL || "https://robinhoodchai
   /\/$/,
   "",
 );
-const PEA_CA = process.env.NEXT_PUBLIC_PEA_TOKEN || "0xd046a0B73dBE5b4E00F507526C35E5426C873f99";
-// Where burned tokens live. Standard burn sinks, override with a comma list.
-const BURN_ADDRS = (
-  process.env.NEXT_PUBLIC_PEA_BURN_ADDRESSES ||
-  "0x000000000000000000000000000000000000dEaD,0x0000000000000000000000000000000000000000"
-)
-  .split(",")
-  .map((a) => a.trim())
-  .filter(Boolean);
-// Optional floor (human units) so a known burn still shows if a read fails.
-const BURN_MIN = Number(process.env.NEXT_PUBLIC_PEA_BURN_MIN ?? 0);
+const BURN_ADDR = (process.env.NEXT_PUBLIC_PEA_BURN_ADDRESSES || "0x000000000000000000000000000000000000dEaD")
+  .split(",")[0]
+  .trim();
 
 function useCountUp(target: number, ms = 1400) {
   const [v, setV] = useState(0);
+  const from = useRef(0);
   const start = useRef<number | null>(null);
   useEffect(() => {
     if (!(target > 0)) return;
+    const base = from.current;
+    start.current = null;
     let raf = 0;
     const tick = (t: number) => {
       if (start.current == null) start.current = t;
       const p = Math.min(1, (t - start.current) / ms);
       const eased = 1 - Math.pow(1 - p, 3);
-      setV(target * eased);
+      setV(base + (target - base) * eased);
       if (p < 1) raf = requestAnimationFrame(tick);
+      else from.current = target;
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -38,63 +34,45 @@ function useCountUp(target: number, ms = 1400) {
   return v;
 }
 
-/** Live $PEA burn tracker: reads tokens held at the burn address(es) on-chain
- *  via the explorer and shows the cumulative amount removed from supply. */
-export default function BurnTracker() {
-  const [burned, setBurned] = useState<number | null>(null);
-  const [supply, setSupply] = useState<number | null>(null);
+/** Live $PEA burn tracker. The amount removed from supply is read on-chain via
+ *  the server (/api/burn) so it is always accurate; it refreshes on an interval
+ *  and animates. SSR values give an instant first paint. */
+export default function BurnTracker({
+  initialBurned,
+  initialSupply,
+}: {
+  initialBurned?: number | null;
+  initialSupply?: number | null;
+}) {
+  const [burned, setBurned] = useState<number | null>(initialBurned ?? null);
+  const [supply, setSupply] = useState<number | null>(initialSupply ?? null);
 
   useEffect(() => {
     let cancelled = false;
-    const decimalsOf = (j: any) => Number(j?.token?.decimals ?? j?.decimals ?? 18);
-
-    const balanceAt = async (addr: string, decimals: number): Promise<number> => {
-      // Try v2 token-balances, then the tokens list; find the PEA entry.
-      for (const path of [
-        `/api/v2/addresses/${addr}/token-balances`,
-        `/api/v2/addresses/${addr}/tokens?type=ERC-20`,
-      ]) {
-        try {
-          const res = await fetch(`${EXPLORER}${path}`, { headers: { accept: "application/json" } });
-          if (!res.ok) continue;
-          const data = await res.json();
-          const items: any[] = Array.isArray(data) ? data : data.items ?? [];
-          const hit = items.find(
-            (it) => (it?.token?.address ?? it?.token?.address_hash ?? "").toLowerCase() === PEA_CA.toLowerCase(),
-          );
-          if (hit) return Number(hit.value ?? 0) / 10 ** (Number(hit.token?.decimals ?? decimals) || decimals);
-        } catch {
-          /* try next */
-        }
-      }
-      return 0;
-    };
-
-    (async () => {
+    const load = async () => {
       try {
-        const tRes = await fetch(`${EXPLORER}/api/v2/tokens/${PEA_CA}`, { headers: { accept: "application/json" } });
-        const tJson = tRes.ok ? await tRes.json() : {};
-        const decimals = decimalsOf(tJson);
-        const total = Number(tJson?.total_supply ?? 0) / 10 ** decimals;
-        const balances = await Promise.all(BURN_ADDRS.map((a) => balanceAt(a, decimals)));
-        const onchain = balances.reduce((s, x) => s + x, 0);
+        const res = await fetch("/api/burn", { cache: "no-store" });
+        if (!res.ok) return;
+        const j = await res.json();
         if (!cancelled) {
-          setSupply(total > 0 ? total : null);
-          setBurned(Math.max(onchain, BURN_MIN));
+          if (typeof j.burned === "number") setBurned(j.burned);
+          if (typeof j.supply === "number") setSupply(j.supply);
         }
       } catch {
-        if (!cancelled && BURN_MIN > 0) setBurned(BURN_MIN);
+        /* keep last value */
       }
-    })();
-
+    };
+    load();
+    const id = setInterval(load, 30000);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
   }, []);
 
   const shown = useCountUp(burned ?? 0);
-  const pct = supply && burned ? (burned / (supply + burned)) * 100 : null;
-  const explorerAddr = `${EXPLORER}/address/${BURN_ADDRS[0]}`;
+  const pct = supply && burned ? (burned / supply) * 100 : null;
+  const explorerAddr = `${EXPLORER}/address/${BURN_ADDR}`;
 
   return (
     <section className="rise card relative overflow-hidden p-5 sm:p-6">
