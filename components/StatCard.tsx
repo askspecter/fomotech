@@ -15,10 +15,12 @@ export default function StatCard({
 }) {
   const valueClass = tone === "up" ? "text-up" : tone === "down" ? "text-down" : "text-white";
   return (
-    <div className="card relative overflow-hidden p-5">
-      {accent && <div className="absolute inset-x-0 top-0 h-px bg-brand opacity-70" />}
-      <div className="text-[13px] font-medium text-muted">{label}</div>
-      <div className={`mt-1.5 font-display text-2xl font-bold tracking-tight tabular-nums ${valueClass}`}>
+    <div className="card-hover relative overflow-hidden p-5">
+      {accent && (
+        <div className="absolute inset-x-0 top-0 h-px bg-brand shadow-[0_0_12px] shadow-brand" />
+      )}
+      <div className="eyebrow !tracking-[0.12em]">{label}</div>
+      <div className={`mt-2 font-display text-[26px] font-black leading-none tracking-tight tabular-nums ${valueClass}`}>
         {value}
       </div>
       {typeof changePct === "number" && (

@@ -15,8 +15,8 @@ export default function Topbar({
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <div className="flex items-center gap-3">
           {/* Brand mark, shown on mobile where the sidebar is hidden. */}
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand font-display text-lg font-black text-white shadow-glow md:hidden">
-            f
+          <span className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl border border-border ring-1 ring-brand/25 shadow-glow-sm md:hidden">
+            <img src="/pea-logo.jpg" alt="PEA" width={36} height={36} className="h-full w-full object-cover" />
           </span>
           <div>
             <h1 className="text-lg font-bold tracking-tight">{title}</h1>

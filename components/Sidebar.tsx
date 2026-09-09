@@ -46,14 +46,14 @@ function Icon({ k }: { k: IconKey }) {
 export default function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="hidden md:flex md:w-64 shrink-0 flex-col border-r border-border-soft bg-surface/40 p-4">
-      <div className="mb-8 flex items-center gap-2.5 px-2 pt-1">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand font-display text-xl font-black text-white shadow-glow">
-          P
+    <aside className="hidden md:flex md:w-64 shrink-0 flex-col border-r border-border-soft bg-surface/30 p-4 backdrop-blur-sm">
+      <div className="mb-8 flex items-center gap-3 px-1 pt-1">
+        <span className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border ring-1 ring-brand/25 shadow-glow-sm">
+          <img src="/pea-logo.jpg" alt="PEA" width={44} height={44} className="h-full w-full object-cover" />
         </span>
         <div className="leading-tight">
-          <div className="font-display text-[15px] font-bold tracking-tight">PEA</div>
-          <div className="text-[11px] text-muted-2">fomo companion</div>
+          <div className="font-display text-[17px] font-black tracking-tight">PEA</div>
+          <div className="eyebrow mt-0.5 !tracking-[0.16em]">fomo companion</div>
         </div>
       </div>
       <nav className="flex flex-col gap-0.5">
@@ -69,7 +69,7 @@ export default function Sidebar() {
                   : "text-muted hover:bg-surface-2/70 hover:text-white"
               }`}
             >
-              {active && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand" />}
+              {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-brand shadow-[0_0_10px] shadow-brand" />}
               <span className={active ? "text-brand-bright" : "text-muted-2 group-hover:text-muted"}>
                 <Icon k={item.icon} />
               </span>

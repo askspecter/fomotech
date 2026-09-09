@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
@@ -6,15 +6,22 @@ import MobileNav from "@/components/MobileNav";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "PEA",
+  title: {
+    default: "PEA",
+    template: "%s · PEA",
+  },
   description:
     "PEA — analytics, leaderboard, live feed, trader explorer, copytrade, and a PONS v2 launchpad for the fomo social trading ecosystem.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#080810",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-bg font-sans text-[#e8eaf0]">
+      <body className="min-h-screen bg-bg font-sans text-[#eceef5]">
         <Providers>
           <div className="flex min-h-screen">
             <Sidebar />

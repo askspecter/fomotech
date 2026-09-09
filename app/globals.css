@@ -11,20 +11,37 @@
 
 html,
 body {
-  background: #0a0a12;
-  color: #e9eaf2;
+  background: #080810;
+  color: #eceef5;
 }
 
-/* Signature ambient glow behind everything. */
+/* Cinematic ambient light — a single red source (top-right) grounded by a
+   dark navy vignette, echoing the PEA logo's glow on near-black. */
 body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(1000px 560px at 82% -12%, rgba(245, 35, 46, 0.16), transparent 60%),
+    radial-gradient(680px 420px at 6% 2%, rgba(245, 35, 46, 0.05), transparent 55%),
+    radial-gradient(900px 700px at 50% 120%, rgba(20, 22, 44, 0.55), transparent 60%);
+}
+
+/* Fine grid + edge vignette for depth. */
+body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(900px 480px at 78% -8%, rgba(124, 108, 255, 0.16), transparent 60%),
-    radial-gradient(760px 420px at 8% 4%, rgba(34, 211, 238, 0.08), transparent 55%);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.014) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 50% 40%, black, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 50% 40%, black, transparent 78%);
 }
 
 * {
@@ -36,7 +53,12 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display), system-ui, sans-serif;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+}
+
+::selection {
+  background: rgba(245, 35, 46, 0.28);
+  color: #fff;
 }
 
 ::-webkit-scrollbar {
@@ -44,8 +66,14 @@ h3 {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #26263a;
+  background: #242430;
   border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #33333f;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -54,6 +82,10 @@ h3 {
 @layer components {
   .card {
     @apply rounded-xl2 border border-border bg-surface bg-card shadow-card;
+  }
+  /* Card that lifts on hover — for interactive/feature panels. */
+  .card-hover {
+    @apply card transition duration-300 hover:-translate-y-0.5 hover:border-brand/40;
   }
   .gradient-text {
     @apply bg-brand bg-clip-text text-transparent;
@@ -67,11 +99,15 @@ h3 {
   .inp {
     @apply w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm outline-none transition placeholder:text-muted-2 focus:border-brand focus:ring-2 focus:ring-brand/25;
   }
+  /* Uppercase micro-label used for section eyebrows. */
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-2;
+  }
 }
 
 @keyframes flash {
   from {
-    background-color: rgba(124, 108, 255, 0.16);
+    background-color: rgba(245, 35, 46, 0.16);
   }
   to {
     background-color: transparent;
@@ -84,7 +120,7 @@ h3 {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -92,5 +128,10 @@ h3 {
   }
 }
 .rise {
-  animation: rise 0.4s ease-out both;
+  animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Staggered rise for grids/lists — set style="animation-delay:..." per item. */
+.rise-2 {
+  animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

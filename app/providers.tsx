@@ -31,7 +31,7 @@ const wagmiConfig = getDefaultConfig({
 });
 
 const theme = darkTheme({
-  accentColor: "#6c5ce7",
+  accentColor: "#f5232e",
   accentColorForeground: "#ffffff",
   borderRadius: "large",
   overlayBlur: "small",
