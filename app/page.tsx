@@ -2,7 +2,8 @@ import Topbar from "@/components/Topbar";
 import StatCard from "@/components/StatCard";
 import PnlBarChart from "@/components/PnlBarChart";
 import WindowTabs from "@/components/WindowTabs";
-import { getLeaderboard, deriveMarketStats, getTrending } from "@/lib/fomo-api";
+import TokenLogo from "@/components/TokenLogo";
+import { getLeaderboard, deriveMarketStats, getTrending, isLive } from "@/lib/fomo-api";
 import { fmtUsd, fmtNum, fmtPct } from "@/lib/format";
 import type { LeaderboardWindow } from "@/lib/types";
 
@@ -51,7 +52,22 @@ export default async function DashboardPage({
         </div>
 
         <div className="card p-5">
-          <h2 className="mb-4 text-base font-semibold">Trending tokens on fomo</h2>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold">Trending tokens on fomo</h2>
+            {isLive ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-up/12 px-2.5 py-1 text-[11px] font-medium text-up">
+                <span className="h-1.5 w-1.5 rounded-full bg-up shadow-[0_0_6px] shadow-up" />
+                Live prices
+              </span>
+            ) : (
+              <span
+                className="rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-muted-2"
+                title="Set FOMO_API_KEY and NEXT_PUBLIC_FOMO_DATA_SOURCE=live for real prices and logos."
+              >
+                Sample data
+              </span>
+            )}
+          </div>
           {trending.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted">Board not available right now.</p>
           ) : (
@@ -72,8 +88,13 @@ export default async function DashboardPage({
                     <tr key={t.rank + t.address} className="border-t border-border/60">
                       <td className="py-3 text-muted">{t.rank}</td>
                       <td className="py-3">
-                        <div className="font-semibold">{t.symbol}</div>
-                        <div className="text-xs text-muted">{t.name}</div>
+                        <div className="flex items-center gap-2.5">
+                          <TokenLogo image={t.image} symbol={t.symbol} />
+                          <div>
+                            <div className="font-semibold">{t.symbol}</div>
+                            <div className="text-xs text-muted">{t.name}</div>
+                          </div>
+                        </div>
                       </td>
                       <td className="py-3 text-right tabular-nums">{fmtUsd(t.priceUsd)}</td>
                       <td className={`py-3 text-right font-medium tabular-nums ${t.change24h >= 0 ? "text-up" : "text-down"}`}>

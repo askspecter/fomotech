@@ -114,26 +114,33 @@ export function getMarketStats(window: LeaderboardWindow): MarketStats {
 
 export async function getTrending(limit = 10): Promise<BoardToken[]> {
   if (!isLive) return mockTrending(limit);
-  const data = await fomoFetch<{ available?: boolean; tokens?: any[] }>(
-    `/v2/leaderboard/tokens/trending?limit=${limit}`,
-  );
-  if (data.available === false || !data.tokens) return [];
-  return data.tokens
-    .filter((t: any) => isRobinhood(t.network))
-    .map((t: any, i: number) => ({
-      rank: t.rank ?? i + 1,
-      image: t.image,
-      name: t.token?.name ?? t.name ?? t.token?.symbol ?? "",
-      symbol: t.token?.symbol ?? t.symbol ?? "",
-      address: t.token?.address ?? t.address ?? "",
-      network: t.network ?? ROBINHOOD_CHAIN,
-      holders: Number(t.holders ?? 0),
-      priceUsd: Number(t.priceUsd ?? 0),
-      change24h: Number(t.change24h ?? 0),
-      marketCapUsd: Number(t.marketCapUsd ?? 0),
-      volume24hUsd: Number(t.volume24hUsd ?? 0),
-      fomoBuyers: Number(t.fomoBuyers ?? 0),
-    }));
+  try {
+    const data = await fomoFetch<{ available?: boolean; tokens?: any[] }>(
+      `/v2/leaderboard/tokens/trending?limit=${limit}`,
+    );
+    if (data.available === false || !data.tokens) return [];
+    return data.tokens
+      .filter((t: any) => isRobinhood(t.network))
+      .map((t: any, i: number) => ({
+        rank: t.rank ?? i + 1,
+        // Real token logo from fomo (falls back to a few common alias keys).
+        image: t.image ?? t.token?.image ?? t.token?.logo ?? t.logo ?? t.icon,
+        name: t.token?.name ?? t.name ?? t.token?.symbol ?? "",
+        symbol: t.token?.symbol ?? t.symbol ?? "",
+        address: t.token?.address ?? t.address ?? "",
+        network: t.network ?? ROBINHOOD_CHAIN,
+        holders: Number(t.holders ?? 0),
+        priceUsd: Number(t.priceUsd ?? t.token?.priceUsd ?? 0),
+        change24h: Number(t.change24h ?? 0),
+        marketCapUsd: Number(t.marketCapUsd ?? t.token?.marketCapUsd ?? 0),
+        volume24hUsd: Number(t.volume24hUsd ?? 0),
+        fomoBuyers: Number(t.fomoBuyers ?? 0),
+      }));
+  } catch {
+    // A failed/unauthorized trending call should not crash the dashboard —
+    // the board renders its "not available" state instead.
+    return [];
+  }
 }
 
 // --- Alerts (live feed) ---------------------------------------------------
