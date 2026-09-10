@@ -11,6 +11,7 @@ type IconKey =
   | "alerts"
   | "trader"
   | "card"
+  | "rewards"
   | "copytrade"
   | "launchpad";
 
@@ -22,6 +23,7 @@ const PATHS: Record<IconKey, string> = {
   alerts: "M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6-2-2v-4a5 5 0 0 0-4-4.9V4a1 1 0 0 0-2 0v1.1A5 5 0 0 0 7 10v4l-2 2v1h14v-1Z",
   trader: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5Z",
   card: "M3 6h18v12H3zM7 10a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8ZM5 14.5c0-1.3 1-2 2-2s2 .7 2 2M13 9h5M13 12.5h5M13 15.5h3",
+  rewards: "M20 12v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7Zm0 0h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7Z",
   copytrade: "M8 8V5l-5 4 5 4v-3h9V8H8Zm8 8v-3l5 4-5 4v-3H7v-2h9Z",
   launchpad: "M5 19c2-1 3-3 3-5l9-9c1-1 3-1 3-1s0 2-1 3l-9 9c-2 0-4 1-5 3Zm9-11 2 2M5 14l-2 2 3 1 1 3 2-2",
 };
@@ -34,6 +36,7 @@ const NAV: { href: string; label: string; icon: IconKey }[] = [
   { href: "/alerts", label: "Alerts", icon: "alerts" },
   { href: "/trader", label: "Trader Explorer", icon: "trader" },
   { href: "/card", label: "Trader Card", icon: "card" },
+  { href: "/rewards", label: "Rewards", icon: "rewards" },
   { href: "/copytrade", label: "Copytrade", icon: "copytrade" },
   { href: "/launchpad", label: "Launchpad", icon: "launchpad" },
 ];
