@@ -8,7 +8,7 @@ const EXPLORER = (process.env.NEXT_PUBLIC_EXPLORER_URL || "https://robinhoodchai
   "",
 );
 // Official $PEA token on Robinhood Chain (used for on-chain data reads only).
-const PEA_CA = process.env.NEXT_PUBLIC_PEA_TOKEN || "0xd046a0B73dBE5b4E00F507526C35E5426C873f99";
+const PEA_CA = process.env.NEXT_PUBLIC_PEA_TOKEN || "0xe4a76414c879734baf4c30882193e914de2d3a42";
 
 interface PeaData {
   price?: number;

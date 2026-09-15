@@ -15,7 +15,7 @@ const ERC20 = [
 ] as const;
 
 export const PEA_TOKEN = (process.env.NEXT_PUBLIC_PEA_TOKEN ||
-  "0xd046a0B73dBE5b4E00F507526C35E5426C873f99") as Address;
+  "0xe4a76414c879734baf4c30882193e914de2d3a42") as Address;
 
 export const BURN_ADDRESSES = (
   process.env.NEXT_PUBLIC_PEA_BURN_ADDRESSES ||

@@ -3,10 +3,11 @@ import { robinhoodChain } from "./chain";
 import { PEA_TOKEN } from "./burn";
 import { cached } from "./kv";
 
-// PEA's PONS v2 bonding curve (used only before graduation). After graduation
-// the live market is a DEX pool, read from DexScreener below.
+// PEA's PONS v2 bonding curve (the live price source before graduation). After
+// graduation the curve empties and the live market moves to a DEX pool, read
+// from DexScreener below.
 const CURVE = (process.env.NEXT_PUBLIC_PEA_CURVE ||
-  "0x576bd13cc4053Eb91D284302a348769D91a7f068") as Address;
+  "0xcf963c585f92a0cd47f8d25b03597d91994cd679") as Address;
 
 const CURVE_ABI = [
   { name: "quoteReserve", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
@@ -103,8 +104,10 @@ async function getEthUsd(): Promise<number> {
   }
 }
 
-/** Live $PEA market: DEX pool first (post-graduation), bonding curve as fallback.
+/** Live $PEA market: PONS bonding curve first (pre-graduation), then the DEX
+ *  pool once the curve empties on graduation. `fromCurve` returns null when the
+ *  curve has no token reserve left, so the DEX takes over automatically.
  *  Cached centrally so all visitors share one lookup per short window. */
 export async function getPeaPrice(): Promise<PeaPrice> {
-  return cached("pea:price", 15, async () => (await fromDex()) ?? (await fromCurve()) ?? EMPTY);
+  return cached("pea:price", 15, async () => (await fromCurve()) ?? (await fromDex()) ?? EMPTY);
 }
