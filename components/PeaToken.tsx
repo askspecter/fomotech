@@ -7,7 +7,7 @@ const EXPLORER = (process.env.NEXT_PUBLIC_EXPLORER_URL || "https://robinhoodchai
   /\/$/,
   "",
 );
-// Official $PEA token on Robinhood Chain.
+// Official $PEA token on Robinhood Chain (used for on-chain data reads only).
 const PEA_CA = process.env.NEXT_PUBLIC_PEA_TOKEN || "0xd046a0B73dBE5b4E00F507526C35E5426C873f99";
 
 interface PeaData {
@@ -15,10 +15,6 @@ interface PeaData {
   marketCap?: number;
   holders?: number;
   supply?: number;
-}
-
-function short(addr: string) {
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
 /**
@@ -36,7 +32,6 @@ export default function PeaToken({
 }) {
   const [d, setD] = useState<PeaData | null>(null);
   const [live, setLive] = useState<{ price?: number; marketCap?: number; change?: number }>({});
-  const [copied, setCopied] = useState(false);
 
   // Live $PEA price + market cap from the PONS bonding curve (server RPC).
   useEffect(() => {
@@ -107,16 +102,6 @@ export default function PeaToken({
     (price != null && d?.supply != null ? price * d.supply : undefined) ??
     fallbackMarketCap;
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(PEA_CA);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* ignore */
-    }
-  };
-
   return (
     <section className="rise card relative overflow-hidden p-5 sm:p-6">
       <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
@@ -170,32 +155,6 @@ export default function PeaToken({
               <div className="mt-1 font-display text-base font-bold tabular-nums">{val}</div>
             </div>
           ))}
-        </div>
-
-        {/* Contract address */}
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border-soft bg-surface-2/40 px-3 py-2.5">
-          <span className="eyebrow !tracking-[0.1em]">CA</span>
-          <code className="font-mono text-xs text-muted sm:text-sm">
-            <span className="sm:hidden">{short(PEA_CA)}</span>
-            <span className="hidden break-all sm:inline">{PEA_CA}</span>
-          </code>
-          <div className="ml-auto flex items-center gap-1.5">
-            <button
-              onClick={copy}
-              className="rounded-lg border border-border bg-surface-3/60 px-2.5 py-1.5 text-xs font-medium text-muted transition hover:border-brand/40 hover:text-white"
-            >
-              {copied ? "Copied" : "Copy"}
-            </button>
-            <a
-              href={`${EXPLORER}/token/${PEA_CA}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface-3/60 px-2.5 py-1.5 text-xs font-medium text-muted transition hover:border-brand/40 hover:text-white"
-            >
-              Explorer
-              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M7 17 17 7M8 7h9v9" /></svg>
-            </a>
-          </div>
         </div>
       </div>
     </section>
