@@ -1,6 +1,6 @@
 /* PEA service worker: makes the app installable and fast, without ever
    serving stale market data. */
-const CACHE = "pea-v1";
+const CACHE = "pea-v2";
 const SHELL = ["/", "/leaderboard", "/feed", "/tokens", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
