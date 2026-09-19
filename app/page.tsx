@@ -5,8 +5,6 @@ import PnlBarChart from "@/components/PnlBarChart";
 import WindowTabs from "@/components/WindowTabs";
 import TokenLogo from "@/components/TokenLogo";
 import TokenPrice from "@/components/TokenPrice";
-import PeaToken from "@/components/PeaToken";
-import BurnTracker from "@/components/BurnTracker";
 import { getLeaderboard, deriveMarketStats, getTrending, isLive } from "@/lib/fomo-api";
 import { fmtUsd, fmtNum, fmtPct } from "@/lib/format";
 import type { LeaderboardWindow } from "@/lib/types";
@@ -24,9 +22,6 @@ export default async function DashboardPage({
     ? searchParams.window
     : "24h") as LeaderboardWindow;
 
-  // Only the board data blocks render. The $PEA price / market cap / burn are
-  // fetched client-side by their components (they poll), so they never slow the
-  // first paint.
   const [traders, trending] = await Promise.all([getLeaderboard(window, 50), getTrending(10)]);
   const stats = deriveMarketStats(traders, window);
   const topPnl = traders.slice(0, 10).map((t) => ({ handle: t.handle, pnlUsd: t.pnlUsd }));
@@ -74,12 +69,6 @@ export default async function DashboardPage({
             </div>
           </div>
         </section>
-
-        {/* Official $PEA token — price from the PONS bonding curve (client-side, live) */}
-        <PeaToken />
-
-        {/* Live buyback & burn tracker (client-side, live) */}
-        <BurnTracker />
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[
